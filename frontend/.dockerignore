@@ -1,0 +1,24 @@
+# Git 관리 폴더
+
+.git/
+.gitignore
+
+# 라이브러리 폴더
+
+node_modules/
+
+# 빌드 결과물 
+
+dist/
+build/
+
+# 환경 변수 파일
+
+.env
+.env.local
+
+# 로그 파일
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

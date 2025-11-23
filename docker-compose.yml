@@ -1,0 +1,76 @@
+services:
+  # 1. Nginx
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - backend
+      - ai
+
+  # 2. Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - db
+    environment:
+      - DJANGO_DB_HOST=db
+      - DJANGO_DB_NAME=${POSTGRES_DB}
+      - DJANGO_DB_USER=${POSTGRES_USER}
+      - DJANGO_DB_PASSWORD=${POSTGRES_PASSWORD}
+  
+  # 3. AI
+  ai:
+    build:
+      context: ./ai
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./ai:/app
+    
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia        
+              count: 1              
+              capabilities: [gpu]
+    
+  # 4. Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    
+    ports:
+      - "5173:5173"
+    
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+  # 5. PostgreSQL DB
+  db:
+    image: pgvector/pgvector:pg16
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    
+    env_file:
+      - .env
+
+# 영구적인 데이터를 저장할 볼륨 정의
+volumes:
+  postgres_data:

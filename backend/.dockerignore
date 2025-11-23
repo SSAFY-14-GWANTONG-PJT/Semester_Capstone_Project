@@ -1,0 +1,26 @@
+# Git 관리 폴더 (용량이 큼)
+
+.git/
+.gitignore
+
+# 가상환경 (컨테이너는 자체 환경을 쓰므로 필요 없음)
+
+venv/
+env/
+.venv/
+
+# 파이썬 컴파일 파일 (찌꺼기)
+
+pycache/
+*.pyc
+*.pyo
+*.pyd
+
+# 환경 변수 파일 (보안상 이미지에 포함되면 안 됨!)
+
+.env
+
+# 로컬 DB 파일
+
+db.sqlite3
+db.postgres
