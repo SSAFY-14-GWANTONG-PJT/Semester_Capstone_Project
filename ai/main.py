@@ -1,136 +1,158 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-# API 통신용 
-import httpx
-
-# GEMINI 사용 위해 import
-from langchain_openai import ChatOpenAI
-from langchain_core.prompts import PromptTemplate
-# 결과 예쁘게
-from langchain_core.output_parsers import StrOutputParser
-# 함수 체인으로 만드는 도구 RunnableLambda
-from langchain_core.runnables import RunnableLambda
-
 import os
+import asyncio
+import io
+import base64
 
+# [2025 최신] Google GenAI SDK
+from google import genai
+from google.genai import types
+from PIL import Image
+
+# LangChain 관련
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.prompts import PromptTemplate
+from langchain_core.output_parsers import JsonOutputParser
 
 app = FastAPI(root_path="/ai")
 
-api_key=os.environ.get("GMS_API_KEY")
+# 1. API 키 설정
+google_api_key = os.environ.get("GOOGLE_API_KEY")
+if not google_api_key:
+    print("❌ Error: GOOGLE_API_KEY가 없습니다.")
 
-# 요청 받을 데이터구조
+# 2. GenAI 클라이언트 초기화 (이미지 생성용)
+# [핵심] API 버전을 명시하여 모델 인식률을 높입니다.
+client = genai.Client(
+    api_key=google_api_key,
+    http_options={'api_version': 'v1beta'} 
+)
+
+# 3. LangChain LLM 초기화 (텍스트 생성용 - Gemini 2.5 Flash)
+# 사용자 요청대로 2.5 버전을 사용합니다.
+llm = ChatGoogleGenerativeAI(
+    model="gemini-2.5-flash", 
+    temperature=0.7,
+    google_api_key=google_api_key
+)
+
 class StoryRequest(BaseModel):
     age: int
     topic: str
     words: list[str]
 
-
-# LangChain 설정, 우선 무료 버전인 gpt-5-mini 사용
-# 텍스트 생성용 LLM
-llm =  ChatOpenAI(
-    model = "gpt-5-mini",
-    temperature=0.7,
-    base_url="https://gms.ssafy.io/gmsapi/api.openai.com/v1",
-    api_key=api_key
-)
-
-# 이미지 생성용
 # ---------------------------------------------------------
-# [핵심] imageMaker 정의 (RunnableLambda용 함수)
+# [동기 함수] 실제 SDK를 호출하여 이미지를 만드는 부분
 # ---------------------------------------------------------
-async def generate_image_with_gms(story_text: str):
-    if not api_key:
-        raise ValueError("GMS_API_KEY가 설정되지 않았습니다.")
-
-    # 1. GMS API 호출 설정
-    url = f"https://gms.ssafy.io/gmsapi/generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key={api_key}"
-    headers = {"Content-Type": "application/json"}
-    
-    # 동화 내용을 기반으로 이미지 프롬프트 작성
-    image_prompt = f"Create a cute, 3d rendered children's book illustration for this story: {story_text[:500]}..."
-    
-    payload = {
-        "contents": [{"parts": [{"text": image_prompt}]}],
-        "generationConfig": {
-            # [핵심 수정] 예시대로 Text와 Image를 모두 요청해야 합니다!
-            "responseModalities": ["Text", "Image"]
-        }
-    }
-
-    # 2. API 요청
-    async with httpx.AsyncClient() as client:
-        response = await client.post(url, json=payload, headers=headers, timeout=30.0)
-
-    img_base64 = None
-    
-    # 3. 응답 처리
-    if response.status_code == 200:
-        try:
-            data = response.json()
-            parts = data["candidates"][0]["content"]["parts"]
+def _generate_image_sync(prompt: str):
+    """
+    Google GenAI SDK (Imagen 3.0)를 사용하여 이미지를 생성
+    """
+    try:
+        # [요청하신 모델 적용] imagen-3.0-generate-002
+        response = client.models.generate_images(
+            model='imagen-3.0-generate-002',
+            prompt=prompt,
+            config=types.GenerateImagesConfig(
+                number_of_images=1,
+            )
+        )
+        
+        # 결과 처리 (PIL Image -> Base64 변환)
+        if response.generated_images:
+            generated_image = response.generated_images[0]
+            image_pil = generated_image.image # PIL Image 객체
             
-            # parts 리스트 중에서 이미지가 들어있는 부분(inlineData)을 찾습니다.
-            for part in parts:
-                if "inlineData" in part:
-                    img_base64 = part["inlineData"]["data"]
-                    break
-                    
-            if not img_base64:
-                print("응답은 왔는데 이미지 데이터가 없습니다.")
-                
-        except Exception as e:
-            print(f"이미지 파싱 실패: {e}")
-            print(f"응답 데이터: {data}") # 디버깅용 로그
-    else:
-        print(f"이미지 생성 실패: {response.text}")
+            # 메모리 버퍼에 이미지를 저장하여 Base64로 변환
+            buffered = io.BytesIO()
+            image_pil.save(buffered, format="PNG")
+            img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+            return img_str
+            
+        return None
+    except Exception as e:
+        # 에러 발생 시 로그 출력 (디버깅용)
+        print(f"SDK 이미지 생성 중 오류: {e}")
+        return None
 
-    # 4. 결과 반환
-    return {
-        "story": story_text,
-        "image": img_base64
-    }
+# ---------------------------------------------------------
+# [비동기 래퍼] FastAPI가 멈추지 않게 스레드로 실행
+# ---------------------------------------------------------
+async def generate_image_for_page(text: str, index: int):
+    # 이미지 프롬프트 (동화 내용을 영어 묘사로 변환)
+    image_prompt = f"Cute 3D rendered children's book illustration: {text[:300]}"
+    
+    try:
+        # [핵심] 동기 함수(_generate_image_sync)를 비동기(Thread)로 실행!
+        img_base64 = await asyncio.to_thread(_generate_image_sync, image_prompt)
+        
+        return {
+            "page_no": index + 1,
+            "text": text,
+            "image": img_base64 # 성공 시 문자열, 실패 시 None
+        }
+    except Exception as e:
+        print(f"페이지 {index+1} 처리 실패: {e}")
+        return {"page_no": index + 1, "text": text, "image": None}
 
-# 함수를 체인 부품으로 변환
-imageMaker = RunnableLambda(generate_image_with_gms)
 
-
-# Prompt 설정
+# ---------------------------------------------------------
+# 프롬프트 및 메인 로직
+# ---------------------------------------------------------
 prompt_template = PromptTemplate.from_template(
     """
-    You are a creative fairy tale writer for children.
-    Write a short and interesting fairy tale in English based on the following inputs.
-    
-    [Instructions]
-    1. **Language:** The entire story MUST be written in **English**.
-    2. **Keyword Translation:** If the 'Required Words' are provided in Korean, **translate them into English** and use the English words in the story. (e.g., '공주' -> 'Princess')
-    3. **Content:** It must be hopeful and have a happy ending.
-    4. **Length:** 2 to 3 paragraphs.
-    
+    You are a professional children's book writer.
+    Write a fairy tale based on the inputs.
+
+    [Structure Requirements]
+    1. The story MUST be divided into **4 to 6 distinct paragraphs**.
+    2. Each paragraph will be one page of the book.
+    3. **Output Format:** You MUST return a **JSON list of strings**. Do not include any other text.
+       Example: ["Page 1 text...", "Page 2 text...", "Page 3 text..."]
+
+    [Content Instructions]
+    - Language: English Only.
+    - Translate Korean keywords to English if necessary.
+    - Happy ending.
+    - Paragraph length: 3~4 sentences per paragraph.
+
     [Inputs]
     - Target Age: {age} years old
     - Topic: {topic}
     - Required Words: {words}
-    
-    Story Content:
-    """)
+    """
+)
 
 @app.get("/")
 def read_root():
-    return {"message": "Hello from AI Server!"}
+    return {"message": "AI Server running with Gemini 2.5 Flash & Imagen 3.0 (002)"}
 
 @app.post("/generate-story")
 async def generate_story(req: StoryRequest):
-    # 체인 연결 - 프롬프트 엔지니어링 - 텍스트 생성 - 양식에 맞게 도출 - 텍스트에 맞는 적절한 image 생성
-    chain = prompt_template | llm | StrOutputParser() | imageMaker
+    # 1. 텍스트 생성 (JsonOutputParser로 리스트 변환)
+    text_chain = prompt_template | llm | JsonOutputParser()
 
-    try :
-        response = await chain.ainvoke({
-            "age" : req.age,
-            "topic" : req.topic,
-            "words" : ", ".join(req.words)
+    try:
+        # [Step 1] 동화 텍스트 생성
+        story_pages = await text_chain.ainvoke({
+            "age": req.age,
+            "topic": req.topic,
+            "words": ", ".join(req.words)
         })
 
-        return response 
+        # [Step 2] 이미지 병렬 생성 (asyncio.gather)
+        tasks = []
+        for i, page_text in enumerate(story_pages):
+            tasks.append(generate_image_for_page(page_text, i))
+        
+        final_pages = await asyncio.gather(*tasks)
+
+        return {
+            "title": f"Fairy Tale: {req.topic}",
+            "total_pages": len(final_pages),
+            "pages": final_pages
+        }
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
