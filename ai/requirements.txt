@@ -17,7 +17,11 @@ uvicorn==0.38.0
 # GPT LLM 활용
 langchain
 langchain-community
-langchain-openai
+# 개발 때는 gemini로 하기 위해 openai 주석처리
+# langchain-openai
+langchain-google-genai
+google-genai
+Pillow
 
 # env 가져오는
 python-dotenv
