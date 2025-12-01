@@ -6,44 +6,116 @@ import asyncio
 import io
 import base64
 
-# [2025 최신] Google GenAI SDK
-from google import genai
-from google.genai import types
-from PIL import Image
-
 # LangChain 관련
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 
+# Gemini 관련
+from google import genai
+from google.genai import types
+from PIL import Image
+
+# 리스트 타입 사용 위해
+from typing import List
+
 app = FastAPI(root_path="/ai")
 
-# 1. API 키 설정
 google_api_key = os.environ.get("GOOGLE_API_KEY")
 
-# 2. GenAI 클라이언트 초기화
 client = genai.Client(
     api_key=google_api_key,
 )
 
-# 3. LangChain LLM 초기화 (텍스트 생성용 - Gemini 2.5 Flash)
 llm = ChatGoogleGenerativeAI(
     model="gemini-2.5-flash", 
     temperature=0.7,
     google_api_key=google_api_key
 )
 
+# 스토리 모델(우선 age, topic, words)
 class StoryRequest(BaseModel):
     age: int
     topic: str
     words: list[str]
 
+# 동화 기반 문제생성 모델
+class ProblemRequest(BaseModel):
+    story_text: str # 동화내용 들어가야
+    num_questions: int = 5 # 만들 문제의 개수
+
+# 문제 선택지 모델
+class ChoiceItem(BaseModel):
+    content: str # 선택지 내용
+    is_correct: bool # 정답 여부
+
+# 질문 모델
+class QuestionItem(BaseModel):
+    question: str # 문제 내용
+    choices: List[ChoiceItem] # 선택지를 담는 List
+
+
+# 동화 생성 프롬프트
+story_prompt_template = PromptTemplate.from_template(
+    """
+    You are a professional children's book writer.
+    Write a fairy tale based on the inputs.
+
+    [Structure Requirements]
+    1. The story MUST be divided into **4 to 6 distinct paragraphs**.
+    2. Each paragraph will be one page of the book.
+    3. **Output Format:** You MUST return a **JSON list of strings**. Do not include any other text.
+       Example: ["Page 1 text...", "Page 2 text...", "Page 3 text..."]
+
+    [Content Instructions]
+    - Language: English Only.
+    - Translate Korean keywords to English if necessary.
+    - Happy ending.
+    - Paragraph length: 3~4 sentences per paragraph.
+
+    [Inputs]
+    - Target Age: {age} years old
+    - Topic: {topic}
+    - Required Words: {words}
+    """
+)
+
+# 문제 생성 프롬프트
+problem_prompt_template = PromptTemplate.from_template(
+    """
+    You are an English education expert for children.
+    Based on the provided story, create {num_questions} multiple-choice questions.
+
+    [Story]
+    {story_text}
+
+    [Requirements]
+    1. Create exactly {num_questions} questions.
+    2. Each question must have **5 choices**.
+    3. Only **one choice** must be correct (`is_correct`: true).
+    4. The questions should test reading comprehension.
+    5. Language: English Only.
+
+    [Output Format]
+    You MUST return a JSON list of objects matching this exact structure:
+    [
+      {{
+        "question": "Who is the main character?",
+        "choices": [
+          {{"content": "A Rabbit", "is_correct": true}},
+          {{"content": "A Lion", "is_correct": false}},
+          {{"content": "A Car", "is_correct": false}},
+          {{"content": "A Tree", "is_correct": false}},
+          {{"content": "A Bear", "is_correct": false}}
+        ]
+      }}
+    ]
+    Do not include any markdown formatting (like ```json). Just return the raw JSON list.
+    """
+)
+
 # [동기 함수] 실제 SDK를 호출하여 이미지를 만드는 부분
 def _generate_image_sync(prompt: str):
-    """
-    Gemini 2.5 Flash Image 사용 (무료 티어 지원)
-    공식 문서: https://ai.google.dev/gemini-api/docs/image-generation
-    """
     try:
         response = client.models.generate_content(
             model='gemini-2.5-flash-image',
@@ -106,30 +178,6 @@ async def generate_image_for_page(text: str, index: int, max_retries=2):
     return {"page_no": index + 1, "text": text, "image": None}
 
 
-# 프롬프트 및 메인 로직
-prompt_template = PromptTemplate.from_template(
-    """
-    You are a professional children's book writer.
-    Write a fairy tale based on the inputs.
-
-    [Structure Requirements]
-    1. The story MUST be divided into **4 to 6 distinct paragraphs**.
-    2. Each paragraph will be one page of the book.
-    3. **Output Format:** You MUST return a **JSON list of strings**. Do not include any other text.
-       Example: ["Page 1 text...", "Page 2 text...", "Page 3 text..."]
-
-    [Content Instructions]
-    - Language: English Only.
-    - Translate Korean keywords to English if necessary.
-    - Happy ending.
-    - Paragraph length: 3~4 sentences per paragraph.
-
-    [Inputs]
-    - Target Age: {age} years old
-    - Topic: {topic}
-    - Required Words: {words}
-    """
-)
 
 @app.get("/")
 def read_root():
@@ -153,13 +201,12 @@ def list_available_models():
     except Exception as e:
         return {"error": str(e)}
 
+# 동화 생성 api 요청 & 함수
 @app.post("/generate-story")
 async def generate_story(req: StoryRequest):
-    # 1. 텍스트 생성 (JsonOutputParser로 리스트 변환)
-    text_chain = prompt_template | llm | JsonOutputParser()
+    text_chain = story_prompt_template | llm | JsonOutputParser()
 
     try:
-        # [Step 1] 동화 텍스트 생성
         print("동화 텍스트 생성 중...")
         story_pages = await text_chain.ainvoke({
             "age": req.age,
@@ -168,8 +215,6 @@ async def generate_story(req: StoryRequest):
         })
         print(f"총 {len(story_pages)}개 페이지 생성 완료")
 
-        # [Step 2] 이미지 순차 생성 (Rate Limit 방지)
-        # 무료 티어: 500 RPM이지만, 안전하게 천천히 생성
         final_pages = []
         total_tokens = 0
         
@@ -178,7 +223,6 @@ async def generate_story(req: StoryRequest):
             page_result = await generate_image_for_page(page_text, i)
             final_pages.append(page_result)
             
-            # Rate Limit 방지: 각 요청 사이 2초 대기
             if i < len(story_pages) - 1:
                 await asyncio.sleep(2)
         
@@ -200,6 +244,34 @@ async def generate_story(req: StoryRequest):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# 동화기반 문제 생성 api 요청 & 함수
+@app.post("/story-problem", response_model=List[QuestionItem])
+async def story_problem(req: ProblemRequest):
+    """
+    동화 텍스트를 입력받고, 문제를 생성(Question + Choices)
+    """
+    # 체인 연결
+    problem_chain = problem_prompt_template | llm | JsonOutputParser()
+
+    try: 
+        print(f"문제 생성 시작 (동화 길이 : {len(req.story_text)}자)")
+
+        # 비동기 호출로 AI에 요청
+        result = await problem_chain.ainvoke({
+            "story_text" : req.story_text,
+            "num_questions" : req.num_questions
+        })
+
+        print(f"문제 len{(result)}개 생성 완료!")
+
+        return result
+    
+    except Exception as e :
+        print(f"문제 생성 중 에러 발생 : {e}")
+
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 
 @app.get("/preview-story", response_class=HTMLResponse)
