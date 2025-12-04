@@ -10,7 +10,7 @@ Table User {
 
 Table Story {
   id integer [primary key]
-  author id [not null, ref: > User.id]
+  author integer [not null, ref: > User.id]
   title varchar
   content varchar
   genre varchar // 관심사 - 장르
