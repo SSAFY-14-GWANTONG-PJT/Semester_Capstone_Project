@@ -1,0 +1,91 @@
+Table User {
+  id integer [primary key]
+  user_login_id varchar
+  password varchar
+  nickname varchar
+  age integer
+  level integer
+  created_at timestamp
+}
+
+Table Story {
+  id integer [primary key]
+  author integer [not null, ref: > User.id]
+  title varchar
+  content varchar
+  genre varchar // 관심사 - 장르
+  story_level integer
+  like integer
+  created_at timestamp
+}
+
+Table Solve {
+  id integer [primary key]
+  user_id integer [not null, ref: > User.id]
+  question_id integer [not null, ref: > Question.id]
+  selected_choice_id integer [ref: > Choice.id]
+  is_correct boolean 
+  solved_at timestamp
+}
+
+Table Question {
+  id integer [not null, primary key]
+  story_id integer [ref: > Story.id] 
+  question varchar
+}
+
+Table StudySet {
+  id integer [not null, primary key]
+  level integer
+
+}
+
+Table Choice { 
+  id integer [primary key]
+  question_id integer [not null, ref: > Question.id] 
+  content varchar
+  is_correct boolean
+}
+
+Table Voca { 
+  id integer [primary key]
+  voca_level integer
+  word varchar
+}
+
+Table Post {
+  id integer [primary key]
+  title varchar
+  content text [note: 'Content of the post']
+  user_id integer [not null, ref: > User.id] 
+  status varchar 
+  created_at timestamp
+}
+
+Table Comment {
+  id integer [primary key]
+  content varchar
+  user_id integer [not null, ref: > User.id] 
+  article_id integer [ref: > Post.id] 
+  like integer
+  created_at timestamp
+}
+
+Table LikePost {
+  user_id integer [not null, ref : > User.id]
+  article_id integer [not null, ref : > Post.id]
+  liked_at datetime 
+}
+
+Table LikeStory {
+  user_id integer [not null, ref : > User.id]
+  story_id integer [not null, ref : > Story.id]
+  liked_at datetime 
+}
+
+Table LikeComment {
+  user_id integer [not null, ref : > User.id]
+  comment_id integer [not null, ref : > Comment.id]
+  liked_at datetime 
+}
+  

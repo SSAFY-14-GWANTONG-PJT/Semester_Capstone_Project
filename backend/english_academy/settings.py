@@ -31,7 +31,8 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    'tests',
+    # 'tests', // 지금 당장은 사용하지 않으니 주석 처리
+    'story',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
