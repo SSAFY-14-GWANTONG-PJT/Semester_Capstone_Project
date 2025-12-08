@@ -45,7 +45,7 @@ Pygments==2.19.2
 pyparsing==3.2.5
 python-dateutil==2.9.0.post0
 pytz==2025.2
-pywin32==311
+# pywin32==311  윈도우 전용 라이브러리, MacOS로 작업중이라 주석처리하고 작업합니다!
 pyzmq==27.1.0
 requests==2.32.4
 scikit-learn==1.7.2

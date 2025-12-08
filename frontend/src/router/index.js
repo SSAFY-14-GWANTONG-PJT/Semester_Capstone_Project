@@ -1,5 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
+import StoryCreateView from '../views/story/StoryCreateView.vue'
+import StoryLoadingView from '../views/story/StoryLoadingView.vue'
+import StoryQuizView from '../views/story/StoryQuizView.vue'
+import StoryReadView from '../views/story/StoryReadView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -10,13 +14,25 @@ const router = createRouter({
       component: HomeView,
     },
     {
-      path: '/about',
-      name: 'about',
-      // route level code-splitting
-      // this generates a separate chunk (About.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
-      component: () => import('../views/AboutView.vue'),
+      path: '/story/create',
+      name: 'story-create',
+      component: StoryCreateView
     },
+    {
+      path: '/story/loading',
+      name: 'story-loading',
+      component: StoryLoadingView
+    },
+    {
+      path: '/story/read/:id', // id를 받아서 조회
+      name: 'story-read',
+      component: StoryReadView
+    },
+    {
+      path: '/story/quiz/:id',
+      name: 'story-quiz',
+      component: StoryQuizView
+    }
   ],
 })
 
