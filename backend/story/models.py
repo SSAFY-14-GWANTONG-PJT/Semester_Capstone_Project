@@ -1,14 +1,31 @@
 from django.db import models
+from django.conf import settings
 
 # Create your models here.
 class Story(models.Model):
-    author_id = models.IntegerField() # 우선 외래키 설정 X(유저 테이블 X)
+    author_id = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='stories')
+    study_set_id = models.IntegerField(null=True, blank=True) # 단어장 foreign key 걸어야 하지만, 생성 X기에 우선 IntegerField 로 유지
+    
     title = models.CharField(max_length=200)
-    content = models.TextField()
+    summary = models.TextField(null=True, blank=True)
     genre = models.CharField(max_length=50)
+    keywords = models.JSONField(default=list)
+
     story_level = models.IntegerField()
-    like = models.IntegerField(default=0)
+    like_count = models.IntegerField(default=0)
+
+    status = models.CharField(max_length=20, default='compelted') # Story를 커뮤니티에 보일지, 말지, 삭제할지를 결정하는 필드
     created_at = models.DateTimeField(auto_now_add=True)
+
+class StoryPage(models.Model):
+    story = models.ForeignKey(Story, on_delete=models.CASCADE, related_name='pages')
+    page_number = models.IntegerField()
+    content = models.TextField() # 본문 내용
+    image_data = models.TextField(null=True, blank=True) # 이미지, Base64 예정
+
+    class Meta:
+        ordering = ['page_number'] # 페이지 순 오름차순 정렬
+
 
 class Question(models.Model):
     story_id = models.ForeignKey(Story, on_delete=models.CASCADE, related_name='questions')
