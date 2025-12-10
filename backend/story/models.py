@@ -3,8 +3,8 @@ from django.conf import settings
 
 # Create your models here.
 class Story(models.Model):
-    author_id = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='stories')
-    study_set_id = models.IntegerField(null=True, blank=True) # 단어장 foreign key 걸어야 하지만, 생성 X기에 우선 IntegerField 로 유지
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='stories')
+    study_set = models.IntegerField(null=True, blank=True) # 단어장 foreign key 걸어야 하지만, 생성 X기에 우선 IntegerField 로 유지
     
     title = models.CharField(max_length=200)
     summary = models.TextField(null=True, blank=True)
@@ -14,7 +14,7 @@ class Story(models.Model):
     story_level = models.IntegerField()
     like_count = models.IntegerField(default=0)
 
-    status = models.CharField(max_length=20, default='compelted') # Story를 커뮤니티에 보일지, 말지, 삭제할지를 결정하는 필드
+    status = models.CharField(max_length=20, default='completed') # Story를 커뮤니티에 보일지, 말지, 삭제할지를 결정하는 필드
     created_at = models.DateTimeField(auto_now_add=True)
 
 class StoryPage(models.Model):
@@ -28,11 +28,11 @@ class StoryPage(models.Model):
 
 
 class Question(models.Model):
-    story_id = models.ForeignKey(Story, on_delete=models.CASCADE, related_name='questions')
+    story = models.ForeignKey(Story, on_delete=models.CASCADE, related_name='questions')
     question = models.TextField()
 
 class Choice(models.Model): 
-    question_id = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='choices')
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='choices')
     content = models.TextField()
     is_correct = models.BooleanField(default=False)
     

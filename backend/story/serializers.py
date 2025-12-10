@@ -4,8 +4,8 @@ from .models import Story, StoryPage, Question, Choice
 class ChoiceSerializer(serializers.ModelSerializer):
     class Meta : 
         model = Choice
-        fields = ['id', 'question_id', 'content', 'is_correct']
-        read_only_fields = ['question_id']
+        fields = ['id', 'question', 'content', 'is_correct']
+        read_only_fields = ['question']
 
 class QuestionSerializer(serializers.ModelSerializer):
     # 선택지 조회 해서 오기
@@ -13,8 +13,8 @@ class QuestionSerializer(serializers.ModelSerializer):
 
     class Meta : 
         model = Question
-        fields = ['id', 'story_id', 'question', 'choices']
-        read_only_fields = ['story_id']
+        fields = ['id', 'story', 'question', 'choices']
+        read_only_fields = ['story']
 
 class StoryPageSerializer(serializers.ModelSerializer):
     class Meta: 
@@ -40,7 +40,7 @@ class StoryDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Story
         fields = [
-            'id', 'author_id', 'author_nickname', 'study_set_id',
+            'id', 'author', 'author_nickname', 'study_set',
             'title', 'summary', 'genre', 'keywords', 
             'story_level', 'like_count', 'status', 'created_at',
             'pages', 'questions'
@@ -50,4 +50,4 @@ class StoryCreateSerializer(serializers.ModelSerializer):
     # 동화 생성용
     class Meta :
         model = Story
-        fields = ['title', 'genre', 'story_level', 'keywords', 'study_set_id']
+        fields = ['title', 'genre', 'story_level', 'keywords', 'study_set']
