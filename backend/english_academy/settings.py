@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     # 'tests', // 지금 당장은 사용하지 않으니 주석 처리
     'story',
     'accounts',
+    'community',
     'rest_framework',
     'rest_framework.authtoken',
     'django.contrib.admin',
