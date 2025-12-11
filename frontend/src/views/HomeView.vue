@@ -17,6 +17,7 @@
                 <a href="#features">주요 기능</a>
                 <a href="#cycle">학습 로드맵</a>
                 <a href="#team">팀 소개</a>
+                <RouterLink :to="{name:'login'}" class="btn btn-primary start-btn">로그인</RouterLink>
                 <RouterLink to="/story/create" class="btn btn-primary start-btn">시작하기</RouterLink>
             </nav>
         </div>
