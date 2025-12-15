@@ -1,9 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
-import StoryCreateView from '../views/story/StoryCreateView.vue'
-import StoryLoadingView from '../views/story/StoryLoadingView.vue'
-import StoryQuizView from '../views/story/StoryQuizView.vue'
-import StoryReadView from '../views/story/StoryReadView.vue'
+import StoryCreateView from '../views/Story/StoryCreateView.vue'
+import StoryLoadingView from '../views/Story/StoryLoadingView.vue'
+import StoryQuizView from '../views/Story/StoryQuizView.vue'
+import StoryReadView from '../views/Story/StoryReadView.vue'
 import LoginView from '@/views/Login/LoginView.vue'
 
 const router = createRouter({
