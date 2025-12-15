@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse, Response
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import os
 import asyncio
 import io
@@ -17,7 +17,7 @@ from google.genai import types
 from PIL import Image
 
 # 리스트 타입 사용 위해
-from typing import List
+from typing import List, Optional
 
 app = FastAPI(root_path="/ai")
 
@@ -33,11 +33,31 @@ llm = ChatGoogleGenerativeAI(
     google_api_key=google_api_key
 )
 
-# 스토리 모델(우선 age, topic, words)
+# 동화 생성 요청모델
 class StoryRequest(BaseModel):
-    age: int
-    topic: str
-    words: list[str]
+    age: int = Field(description="동화가 고려한 독자 나이")
+    story_level: int = Field(description="동화의 난이도(읽을 때의 어려움 정도)")
+    genre: str = "General" # 우선 General로 세우고 생성
+    keywords: List[str] = Field(default=[], description="아이가 원하는 동화에 들어갈 요소(마법의 성, 공주, 전설의 검, 용)")
+    vocab_words: List[str] = Field(default=[], description="오늘 배워야 할 Voca 리스트")
+    study_set_id: Optional[int] = Field(default=None, description="가리키는 StudySet")
+
+# 동화 페이지 모델
+class StoryPageResponse(BaseModel):
+    page_number: int
+    content: str
+    image_data: Optional[str] = None # Base64 문자열 들어가는 image_data
+
+# 동화 요청 결과 모델
+class StoryResponse(BaseModel):
+    study_set_id: Optional[int]
+    title: str
+    summary: str
+    genre: str
+    keywords: List[str] # 동화에 사용된 키워드 (요청받은 것 그대로 반환)
+    story_level: int 
+    pages: List[StoryPageResponse]
+
 
 # 동화 기반 문제생성 모델
 class ProblemRequest(BaseModel):
@@ -55,7 +75,7 @@ class QuestionItem(BaseModel):
     choices: List[ChoiceItem] # 선택지를 담는 List
 
 
-# 동화 생성 프롬프트
+# 동화 생성 프롬프트 업데이트
 story_prompt_template = PromptTemplate.from_template(
     """
     You are a professional children's book writer.
@@ -64,19 +84,31 @@ story_prompt_template = PromptTemplate.from_template(
     [Structure Requirements]
     1. The story MUST be divided into **4 to 6 distinct paragraphs**.
     2. Each paragraph will be one page of the book.
-    3. **Output Format:** You MUST return a **JSON list of strings**. Do not include any other text.
-       Example: ["Page 1 text...", "Page 2 text...", "Page 3 text..."]
+    3. **Output Format:** You MUST return a **Single JSON Object**. Do not include any other text.
+       
+       JSON Structure Example:
+       {{
+         "title": "The Title of the Story",
+         "summary": "A short summary of the story in 1-2 sentences.",
+         "pages": ["Page 1 text...", "Page 2 text...", "Page 3 text..."]
+       }}
 
     [Content Instructions]
     - Language: English Only.
-    - Translate Korean keywords to English if necessary.
-    - Happy ending.
-    - Paragraph length: 3~4 sentences per paragraph.
+    - Target Audience Age: {age} years old (Level {level})
+    - Genre: {genre}
+    - Story Elements (Keywords): {keywords} (Use these to build the plot)
+    
+    [Vocabulary Instructions]
+    - **Target Vocabulary Words**: {vocab_words}
+    - Try to include these vocabulary words naturally in the story.
+    - **IMPORTANT**: If a word does not fit the context or genre (e.g., 'pregnancy' in a children's hero story), **OMIT it**. Do not force it.
+    - Prioritize a natural, engaging story flow over including every single word.
 
     [Inputs]
-    - Target Age: {age} years old
-    - Topic: {topic}
-    - Required Words: {words}
+    - Age: {age}
+    - Keywords: {keywords}
+    - Vocab: {vocab_words}
     """
 )
 
@@ -148,34 +180,32 @@ def _generate_image_sync(prompt: str):
         return None
 
 # [비동기 래퍼] FastAPI가 멈추지 않게 스레드로 실행
-async def generate_image_for_page(text: str, index: int, max_retries=2):
+async def generate_image_for_page(text: str, index: int, max_retries=2) -> StoryPageResponse:
     """
     이미지 생성 with 재시도 로직
     """
     # 이미지 프롬프트 (동화 내용을 영어 묘사로 변환)
     image_prompt = f"Create a cute 3D rendered children's book illustration: {text[:300]}"
     
+    img_base64 = None
     for attempt in range(max_retries):
         try:
             img_base64 = await asyncio.to_thread(_generate_image_sync, image_prompt)
-            
             if img_base64:
-                return {
-                    "page_no": index + 1,
-                    "text": text,
-                    "image": img_base64
-                }
-            
-            # 실패 시 재시도 전 대기
+                break
             if attempt < max_retries - 1:
                 await asyncio.sleep(2)
-                
         except Exception as e:
             print(f"페이지 {index+1} 시도 {attempt+1} 실패: {e}")
             if attempt < max_retries - 1:
                 await asyncio.sleep(2)
     
-    return {"page_no": index + 1, "text": text, "image": None}
+    # ERD의 StoryPage 모델 구조에 맞춰 반환
+    return StoryPageResponse(
+        page_number=index + 1,
+        content=text,
+        image_data=img_base64
+    )
 
 
 
@@ -201,49 +231,66 @@ def list_available_models():
     except Exception as e:
         return {"error": str(e)}
 
+
 # 동화 생성 api 요청 & 함수
-@app.post("/generate-story")
+@app.post("/generate-story", response_model=StoryResponse)
 async def generate_story(req: StoryRequest):
+    
     text_chain = story_prompt_template | llm | JsonOutputParser()
 
     try:
-        print("동화 텍스트 생성 중...")
-        story_pages = await text_chain.ainvoke({
-            "age": req.age,
-            "topic": req.topic,
-            "words": ", ".join(req.words)
-        })
-        print(f"총 {len(story_pages)}개 페이지 생성 완료")
-
-        final_pages = []
-        total_tokens = 0
+        print("동화 텍스트(제목, 줄거리, 내용) 생성 중...")
         
-        for i, page_text in enumerate(story_pages):
-            print(f"페이지 {i+1}/{len(story_pages)} 이미지 생성 중...")
+        # 키워드와 단어장 목록을 쉼표로 구분된 문자열로 변환
+        keywords_str = ", ".join(req.keywords) if req.keywords else "Creative Story"
+        vocab_str = ", ".join(req.vocab_words) if req.vocab_words else "None"
+
+        story_data = await text_chain.ainvoke({
+            "age": req.age,
+            "level": req.story_level,
+            "keywords": keywords_str,
+            "genre": req.genre,
+            "vocab_words": vocab_str
+        })
+        
+        pages_text_list = story_data.get("pages", [])
+        title = story_data.get("title", f"Fairy Tale: {req.genre}")
+        summary = story_data.get("summary", "")
+        
+        print(f"총 {len(pages_text_list)}개 페이지 텍스트 생성 완료")
+
+        final_pages_data = []
+        for i, page_text in enumerate(pages_text_list):
+            print(f"페이지 {i+1}/{len(pages_text_list)} 이미지 생성 중...")
             page_result = await generate_image_for_page(page_text, i)
-            final_pages.append(page_result)
+            final_pages_data.append(page_result)
             
-            if i < len(story_pages) - 1:
+            if i < len(pages_text_list) - 1:
                 await asyncio.sleep(2)
         
         print(f"\n전체 동화 생성 완료!")
-        print(f"   - 텍스트: {len(story_pages)} 페이지")
-        print(f"   - 이미지: {sum(1 for p in final_pages if p['image'])} / {len(story_pages)} 성공")
 
-        result = {
-            "title": f"Fairy Tale: {req.topic}",
-            "total_pages": len(final_pages),
-            "pages": final_pages,
-            "preview_url": f"/ai/preview-story?title={req.topic}"  # 미리보기 URL 추가
-        }
+        result = StoryResponse(
+            study_set_id=req.study_set_id, # 요청받은 ID 그대로 반환
+            title=title,
+            summary=summary,
+            genre=req.genre,
+            keywords=req.keywords, # 요청받은 키워드 그대로 반환
+            story_level=req.story_level, # 요청받은 레벨 그대로 반환
+            pages=final_pages_data
+        )
         
-        # 마지막 생성 결과를 메모리에 저장 (미리보기용)
-        app.state.last_story = result
+        # 미리보기용 저장
+        app.state.last_story = result.model_dump()
+        app.state.last_story['preview_url'] = f"/ai/preview-story" 
         
         return result
 
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+    
 
 # 동화기반 문제 생성 api 요청 & 함수
 @app.post("/story-problem", response_model=List[QuestionItem])
@@ -275,7 +322,7 @@ async def story_problem(req: ProblemRequest):
 
 
 @app.get("/preview-story", response_class=HTMLResponse)
-async def preview_story(title: str = "Fairy Tale"):
+async def preview_story():
     """
     마지막 생성된 동화를 HTML로 미리보기
     """
@@ -302,6 +349,13 @@ async def preview_story(title: str = "Fairy Tale"):
                 text-align: center;
                 color: #FF6B6B;
                 text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            }}
+            .summary {{
+                background: #FFFACD;
+                padding: 15px;
+                border-radius: 10px;
+                margin-bottom: 20px;
+                border: 2px dashed #FFD700;
             }}
             .page {{
                 background: white;
@@ -340,19 +394,28 @@ async def preview_story(title: str = "Fairy Tale"):
     </head>
     <body>
         <h1>📚 {story['title']} 📚</h1>
-        <p style="text-align: center; color: #666;">Total Pages: {story['total_pages']}</p>
+        <div class="summary">
+            <strong>Summary:</strong> {story['summary']}
+        </div>
+        <p style="text-align: center; color: #666;">Genre: {story['genre']} | Level: {story['story_level']}</p>
     """
     
     for page in story['pages']:
+        # Pydantic model이 dump된 상태이므로 dict로 접근
+        # page_no가 ERD의 page_number로 변경됨
+        page_num = page.get('page_number')
+        content = page.get('content')
+        image_data = page.get('image_data')
+
         html_content += f"""
         <div class="page">
-            <div class="page-number">📖 Page {page['page_no']}</div>
-            <div class="text">{page['text']}</div>
+            <div class="page-number">📖 Page {page_num}</div>
+            <div class="text">{content}</div>
         """
         
-        if page['image']:
+        if image_data:
             html_content += f"""
-            <img class="image" src="data:image/png;base64,{page['image']}" alt="Page {page['page_no']} illustration">
+            <img class="image" src="data:image/png;base64,{image_data}" alt="Page illustration">
             """
         else:
             html_content += """
@@ -371,18 +434,15 @@ async def preview_story(title: str = "Fairy Tale"):
 
 @app.get("/preview-image/{page_no}", response_class=Response)
 async def preview_single_image(page_no: int):
-    """
-    특정 페이지의 이미지만 PNG로 반환
-    """
     if not hasattr(app.state, 'last_story') or not app.state.last_story:
         raise HTTPException(status_code=404, detail="No story found")
     
     story = app.state.last_story
-    page = next((p for p in story['pages'] if p['page_no'] == page_no), None)
+    # page_number로 검색
+    page = next((p for p in story['pages'] if p['page_number'] == page_no), None)
     
-    if not page or not page['image']:
+    if not page or not page['image_data']:
         raise HTTPException(status_code=404, detail="Image not found")
     
-    # base64 디코딩하여 이미지 바이너리 반환
-    image_data = base64.b64decode(page['image'])
-    return Response(content=image_data, media_type="image/png")
+    image_bytes = base64.b64decode(page['image_data'])
+    return Response(content=image_bytes, media_type="image/png")
