@@ -148,7 +148,7 @@ def comment_update_delete(request, comment_id):
 
     raise NotImplementedError("여기도 네가 구현해보면 좋아!")
 
-# 댓글 좋아요 토글
+# 댓글 좋아요 토글 #차후 구현 생각 및 수정
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def comment_like_toggle(request, comment_id):
