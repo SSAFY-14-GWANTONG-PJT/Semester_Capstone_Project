@@ -21,7 +21,9 @@
                     <a href="index.html#features">주요 기능</a>
                     <a href="index.html#cycle">학습 로드맵</a>
                     <a href="index.html#team">팀 소개</a>
-                    <a href="signUp.html" style="color: var(--secondary);">회원가입</a>
+                    <RouterLink to="/signup" style="color: var(--secondary);">
+                      회원가입
+                    </RouterLink>
                 </nav>
             </div>
         </header>
@@ -39,7 +41,7 @@
                                 <div class="form-group">
                                     <label for="email">이메일</label>
                                     <div class="input-wrapper">
-                                        <input type="email" id="email" placeholder="example@email.com" required v-model="loginForm.username">
+                                        <input type="email" id="email" placeholder="example@email.com" required v-model="loginForm.email">
                                         <i class="fas fa-envelope input-icon"></i>
                                     </div>
                                 </div>
@@ -95,32 +97,35 @@
 <script setup>
 import {reactive, onMounted, onUnmounted} from'vue'
 import {useRouter} from 'vue-router'
+import { useCounterStore } from '@/stores/counter'
 import axios from 'axios'
+
+const store = useCounterStore()
 
 const router = useRouter()
 
 const loginForm = reactive({
-    username: '',
+    email: '',
     password: ''
 })
 
 const loginHandler = async () => {
-    if (!loginForm.username || !loginForm.password) {
-        alert("아이디와 비밀번호를 모두 입력해주세요.")
+    if (!loginForm.email || !loginForm.password) {
+        alert("이메일과 비밀번호를 모두 입력해주세요.")
         return;
     }
 
     axios.post('http://localhost:8000/accounts/login/', {
-        username: loginForm.username,
+        email: loginForm.email,
         password: loginForm.password
     })
     .then(response => {
-        localStorage.setItem('token', response.data.token)
+        store.login(response.data.token, response.data.nickname)
         router.push('/')
     })
     .catch(error => {
         console.error("로그인 실패:", error);
-        alert("아이디 또는 비밀번호가 틀렸습니다.");
+        alert("이메일 또는 비밀번호가 틀렸습니다.");
     })
 }
 
