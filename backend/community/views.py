@@ -1,8 +1,10 @@
+from django.shortcuts import get_object_or_404
+from django.db import transaction
+
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework import status
-from django.shortcuts import get_object_or_404
 
 from .models import Post, Comment, LikePost, LikeComment
 from .serializers import PostSerializer, CommentSerializer
@@ -10,20 +12,20 @@ from .serializers import PostSerializer, CommentSerializer
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticatedOrReadOnly])
 def post_list_create(request):
-    # 1) 게시글 목록 조회
+    # 게시글 목록 조회
     if request.method == 'GET':
         qs = Post.objects.all()
 
-        # ?status= 로 필터 (예: NORMAL)
+        # ?status= 로 필터
         status_param = request.query_params.get('status')
         if status_param:
             qs = qs.filter(status=status_param)
 
-        # ?sort= 로 정렬 (예: -created_at)
+        # ?sort= 로 정렬
         sort_param = request.query_params.get('sort', '-created_at')
         qs = qs.order_by(sort_param)
 
-        # 간단하게 전체 반환 (나중에 pagination 붙여도 됨)
+        # 전체 반환, 차후 pagination
         serializer = PostSerializer(qs, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -48,12 +50,12 @@ def post_list_create(request):
 def post_detail(request, post_id):
     post = get_object_or_404(Post, pk=post_id)
 
-    # 1) 상세 조회
+    # 상세 조회
     if request.method == 'GET':
         serializer = PostSerializer(post)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    # 2) 수정
+    # 수정
     if request.method == 'PUT':
         if post.user != request.user:
             return Response(
@@ -68,7 +70,7 @@ def post_detail(request, post_id):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    # 3) 삭제
+    # 삭제
     if request.method == 'DELETE':
         if post.user != request.user:
             return Response(
@@ -90,13 +92,13 @@ def post_like_toggle(request, post_id):
     )
 
     if not created:
-        # 이미 좋아요 → 취소
+        # 좋아요 -> 취소
         like_obj.delete()
         liked = False
     else:
         liked = True
 
-    # Post.like 카운트 필드가 있다면 여기서 동기화
+    # Post.like 카운트 필드 동기화
     if hasattr(post, 'like'):
         post.like = LikePost.objects.filter(post=post).count()
         post.save(update_fields=['like'])
@@ -109,60 +111,84 @@ def post_like_toggle(request, post_id):
         status=status.HTTP_200_OK
     )
 
-# 댓글목록 작성 초안만 잡아둠
-@api_view(['GET', 'POST'])
+# 댓글목록 작성 수정 중
+@api_view(['GET', 'POST']) # get: 목록 , post : 작성(user=request.user)
 @permission_classes([IsAuthenticatedOrReadOnly])
 def comment_list_create(request, post_id):
-    """
-    TODO:
-    - GET: 특정 post_id 에 달린 댓글 리스트 반환
-    - POST: 해당 게시글에 새 댓글 작성 (user=request.user)
-    """
-    # 1) post = get_object_or_404(Post, pk=post_id)
+    post = get_object_or_404(Post, pk=post_id)
 
-    # 2) if GET:
-    #       qs = Comment.objects.filter(post=post).order_by('created_at')
-    #       serializer = CommentSerializer(qs, many=True)
-    #       return Response(serializer.data)
+    if request.method == 'GET':
+        qs = (
+            Comment.objects
+            .filter(post=post)
+            .select_related('user')
+            .order_by('created_at')
+        )
+        serializer = CommentSerializer(qs, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
-    # 3) if POST:
-    #       로그인 체크 후 CommentSerializer(data=request.data)
-    #       serializer.is_valid() 시 serializer.save(user=request.user, post=post)
-    #       201 반환
-
-    raise NotImplementedError("여기 로직은 네가 채워보자!")
+    # POST
+    serializer = CommentSerializer(data=request.data, context={'request': request})
+    serializer.is_valid(raise_exception=True)
+    serializer.save(user=request.user, post=post)
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 # 댓글 수정 삭제
 @api_view(['PUT', 'DELETE'])
 @permission_classes([IsAuthenticatedOrReadOnly])
 def comment_update_delete(request, comment_id):
-    """
-    TODO:
-    - GET은 없음
-    - PUT: 본인 댓글만 수정 가능
-    - DELETE: 본인 댓글만 삭제 가능
-    """
-    # comment = get_object_or_404(Comment, pk=comment_id)
-    # if request.method == 'PUT': ...
-    # if request.method == 'DELETE': ...
+    comment = get_object_or_404(Comment, pk=comment_id)
 
-    raise NotImplementedError("여기도 네가 구현해보면 좋아!")
+    if comment.user != request.user:
+        return Response(
+            {"detail": "권한이 없습니다."},
+            status=status.HTTP_403_FORBIDDEN
+        )
 
-# 댓글 좋아요 토글 #차후 구현 생각 및 수정
-@api_view(['POST'])
+    if request.method == 'PUT':
+        serializer = CommentSerializer(
+            comment,
+            data=request.data,
+            partial=True,  # content만 수정 가능
+            context={'request': request}
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    # 삭제
+    comment.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+# 댓글 좋아요 토글 (수정 중)
+@api_view(['POST']) #POST /comments/{comment_id}/like
 @permission_classes([IsAuthenticated])
 def comment_like_toggle(request, comment_id):
-    """
-    TODO:
-    - LikeComment.objects.get_or_create(user=request.user, comment=comment)
-    - created 여부에 따라 좋아요/취소 처리
-    - Comment.like 카운트 있다면 동기화
-    """
-    # comment = get_object_or_404(Comment, pk=comment_id)
-    # like_obj, created = LikeComment.objects.get_or_create(...)
-    # if not created: like_obj.delete(); liked=False else liked=True
-    # comment.like = LikeComment.objects.filter(comment=comment).count()
-    # comment.save(update_fields=['like'])
-    # return Response({...})
+    # LikeComment 중복 방지 해야함
+    comment = get_object_or_404(Comment, pk=comment_id)
 
-    raise NotImplementedError("댓글 좋아요 토글도 네가 직접 구현해보자!")
+    with transaction.atomic():
+        like_obj, created = LikeComment.objects.get_or_create(
+            user=request.user,
+            comment=comment,
+        )
+
+        if created:
+            liked = True
+        else:
+            like_obj.delete()
+            liked = False
+
+        # like count 동기화 (캐시 컬럼)
+        like_count = LikeComment.objects.filter(comment=comment).count()
+        comment.like = like_count
+        comment.save(update_fields=['like'])
+
+    return Response(
+        {
+            "comment_id": comment.id,
+            "liked": liked,
+            "like_count": like_count,
+        },
+        status=status.HTTP_200_OK
+    )
