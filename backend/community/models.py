@@ -14,3 +14,14 @@ class Post(models.Model):
 
     def __str__(self):
         return self.title
+    
+class LikeComment(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    comment = models.ForeignKey(Comment, on_delete=models.CASCADE)
+    liked_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["user", "comment"], name="unique_like_comment")
+        ]
+

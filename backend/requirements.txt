@@ -40,7 +40,7 @@ pillow==12.0.0
 platformdirs==4.5.0
 prompt_toolkit==3.0.52
 psutil==7.1.0
-psycopg2-binary==2.9.11
+#psycopg2-binary==2.9.11 #splite3으로 임시 작업해서 주석 처리해놨습니다
 pure_eval==0.2.3
 Pygments==2.19.2
 pyparsing==3.2.5
