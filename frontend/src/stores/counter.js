@@ -8,5 +8,34 @@ export const useCounterStore = defineStore('counter', () => {
     count.value++
   }
 
-  return { count, doubleCount, increment }
+  const token = ref(localStorage.getItem('token') || null)
+  const nickname = ref(localStorage.getItem('nickname') || '')
+
+  const isLoggedIn = computed(() => !!token.value)
+
+  function login(newToken, newNickname) {
+    token.value = newToken
+    nickname.value = newNickname
+
+    localStorage.setItem('token',newToken)
+    localStorage.setItem('nickname',newNickname)
+  }
+
+  function logout() {
+    token.value = null
+    nickname.value = ''
+
+    localStorage.removeItem('token')
+    localStorage.removeItem('nickname')
+  }
+
+  return { 
+    count, 
+    doubleCount, 
+    increment, 
+    isLoggedIn,
+    nickname,
+    login,
+    logout
+  }
 })

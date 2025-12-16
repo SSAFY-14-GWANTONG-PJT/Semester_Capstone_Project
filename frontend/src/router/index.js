@@ -5,6 +5,7 @@ import StoryLoadingView from '../views/Story/StoryLoadingView.vue'
 import StoryQuizView from '../views/Story/StoryQuizView.vue'
 import StoryReadView from '../views/Story/StoryReadView.vue'
 import LoginView from '@/views/Login/LoginView.vue'
+import SignUpView from '@/views/SignUp/SignUpView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -40,6 +41,12 @@ const router = createRouter({
       path: '/login',
       name: 'login',
       component: LoginView
+    },
+    // 회원가입 페이지 추가
+    {
+      path: '/signup',
+      name: 'signup',
+      component: SignUpView
     }
   ],
 })

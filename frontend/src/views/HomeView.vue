@@ -17,7 +17,14 @@
                 <a href="#features">주요 기능</a>
                 <a href="#cycle">학습 로드맵</a>
                 <a href="#team">팀 소개</a>
-                <RouterLink :to="{name:'login'}" class="btn btn-primary start-btn">로그인</RouterLink>
+                <span v-if="!isLoggedIn">
+                    <RouterLink :to="{name:'login'}" class="btn btn-primary start-btn">로그인</RouterLink>
+                    <RouterLink :to="{name:'signup'}" class="btn btn-primary start-btn">회원가입</RouterLink>
+                </span>
+                <span v-else style="margin-left: 20px;">
+                    <u><b><span style="color: blue;">{{ nickname }}</span>님 반갑습니다!</b></u>
+                    <button class="btn btn-primary start-btn" @click="store.logout">로그아웃</button>
+                </span>
                 <RouterLink to="/story/create" class="btn btn-primary start-btn">시작하기</RouterLink>
             </nav>
         </div>
@@ -177,6 +184,11 @@
 
 <script setup>
 import { RouterLink } from 'vue-router';
+import { useCounterStore } from '@/stores/counter';
+import {storeToRefs} from 'pinia'
+const store = useCounterStore()
+const { isLoggedIn, nickname } = storeToRefs(store)
+
 // 별도의 로직은 없습니다.
 </script>
 
