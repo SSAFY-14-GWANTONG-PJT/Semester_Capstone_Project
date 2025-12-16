@@ -16,16 +16,16 @@ def post_list_create(request):
     if request.method == 'GET':
         qs = Post.objects.all()
 
-        # ?status= 로 필터 (예: NORMAL)
+        # ?status= 로 필터
         status_param = request.query_params.get('status')
         if status_param:
             qs = qs.filter(status=status_param)
 
-        # ?sort= 로 정렬 (예: -created_at)
+        # ?sort= 로 정렬
         sort_param = request.query_params.get('sort', '-created_at')
         qs = qs.order_by(sort_param)
 
-        # 전체 반환, 나중에 pagination
+        # 전체 반환, 차후 pagination
         serializer = PostSerializer(qs, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -50,12 +50,12 @@ def post_list_create(request):
 def post_detail(request, post_id):
     post = get_object_or_404(Post, pk=post_id)
 
-    # 1) 상세 조회
+    # 상세 조회
     if request.method == 'GET':
         serializer = PostSerializer(post)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    # 2) 수정
+    # 수정
     if request.method == 'PUT':
         if post.user != request.user:
             return Response(
@@ -70,7 +70,7 @@ def post_detail(request, post_id):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    # 3) 삭제
+    # 삭제
     if request.method == 'DELETE':
         if post.user != request.user:
             return Response(
@@ -92,13 +92,13 @@ def post_like_toggle(request, post_id):
     )
 
     if not created:
-        # 좋아 누른 것 → 취소
+        # 좋아요 -> 취소
         like_obj.delete()
         liked = False
     else:
         liked = True
 
-    # Post.like 카운트 필드가 있다면 여기서 동기화
+    # Post.like 카운트 필드 동기화
     if hasattr(post, 'like'):
         post.like = LikePost.objects.filter(post=post).count()
         post.save(update_fields=['like'])
@@ -111,7 +111,7 @@ def post_like_toggle(request, post_id):
         status=status.HTTP_200_OK
     )
 
-# 댓글목록 작성 초안만 잡아둠
+# 댓글목록 작성 수정 중
 @api_view(['GET', 'POST']) # get: 목록 , post : 작성(user=request.user)
 @permission_classes([IsAuthenticatedOrReadOnly])
 def comment_list_create(request, post_id):
@@ -134,7 +134,7 @@ def comment_list_create(request, post_id):
     return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 # 댓글 수정 삭제
-@api_view(['PUT', 'DELETE']) # put: 수정 , delete : 삭제
+@api_view(['PUT', 'DELETE'])
 @permission_classes([IsAuthenticatedOrReadOnly])
 def comment_update_delete(request, comment_id):
     comment = get_object_or_404(Comment, pk=comment_id)
