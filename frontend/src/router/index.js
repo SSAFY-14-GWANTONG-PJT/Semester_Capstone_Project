@@ -31,8 +31,8 @@ const router = createRouter({
       component: StoryReadView
     },
     {
-      path: '/story/quiz/:id',
-      name: 'story-quiz',
+      path: '/story/:id/quiz',
+      name: 'StoryQuiz',
       component: StoryQuizView
     },
     
