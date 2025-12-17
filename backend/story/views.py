@@ -120,6 +120,88 @@ def story_list_create(request) :
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticatedOrReadOnly])
+def story_question_list_create(request, story_id) : 
+    story = get_object_or_404(Story, pk=story_id)
+
+    if request.method == 'GET' :
+        questions = Question.objects.filter(story=story)
+        serializer = QuestionSerializer(questions, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    # 문제 생성
+    elif request.method == 'POST' : 
+        
+        # 동화 본문 텍스트 가져오기
+        pages = story.pages.all().order_by('page_number')
+        if not pages.exists() :
+            return Response(
+                {'errors' : '동화 내용이 없습니다. 페이지를 생성해야 합니다.'},
+                status=status.HTTP_400_BAD_REQUEST
+                                        )
+        
+        full_story_text = " ".join([page.content for page in pages])
+
+        # AI 서버로 보낼 데이터 
+        num_questions = request.data.get('num_questions', 3)
+
+        ai_payload = {
+            "story_text" : full_story_text,
+            "num_questions" : num_questions
+        }
+
+        response = None
+
+        try : 
+            print(f"AI 서버로 문제 생성 요청 전송(텍스트 길이 : {(full_story_text)}")
+
+            # 문제 생성 요청보내기
+            response = requests.post(f"{AI_SERVER_URL}/story-problem", json=ai_payload)
+
+            if response.status_code != 200 :
+                print(f"문제 생성 실패 : {response.text}")
+                return Response(
+                    {'errors' : 'AI Question generation Failed', 'details' : response.text},
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE
+                )
+            
+            questions_data = response.json()
+            print(f"AI 문제 {len(questions_data)}개 생성 완료, DB 저장 시작..")
+
+            # DB 저장
+            created_questions = []
+            with transaction.atomic() : 
+                for q_item in questions_data : 
+                    new_question = Question.objects.create(
+                        story=story,
+                        question=q_item.get('question')
+                    )
+
+                    choices_data = q_item.get('choices', [])
+                    for c_item in choices_data:
+                        Choice.objects.create(
+                            question=new_question,
+                            content=c_item.get('content'),
+                            is_correct=c_item.get('is_correct')
+                        )
+                    created_questions.append(new_question)
+            
+
+            return Response(QuestionSerializer(created_questions, many=True).data, status=status.HTTP_201_CREATED)
+        
+        except requests.exceptions.RequestException as e:
+            
+            print(f"AI 서버 연결 오류: {e}")
+            return Response({'error': 'Cannot connect to AI service.'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        
+        except Exception as e:
+            
+            print(f"서버 내부 오류: {e}")
+            import traceback
+            traceback.print_exc()
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
         
 # 동화 상세 조회 및 수정
 @api_view(['GET', 'PUT'])
@@ -163,26 +245,6 @@ def story_page_list_create(request, story_id):
             serializer.save(story=story)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-# 문제 목록 조회 및 생성
-@api_view(['GET', 'POST'])
-@permission_classes([IsAuthenticatedOrReadOnly])
-def story_question_list_create(request, story_id):
-    story = get_object_or_404(Story, pk=story_id)
-
-    if request.method == 'GET':
-        questions = Question.objects.filter(story=story)
-        serializer = QuestionSerializer(questions, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    elif request.method == 'POST':
-        serializer = QuestionSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(story=story)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 # 문제에 딸린 선택지(보기) 생성 및 추가
 @api_view(['POST'])
