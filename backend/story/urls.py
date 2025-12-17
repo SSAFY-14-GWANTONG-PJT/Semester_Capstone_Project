@@ -9,6 +9,8 @@ urlpatterns = [
 
     # path('<int:pk>/like/', views.toggle_like, name='story-like'), # POST(좋아요) -- 나중에
 
+    path('<int:story_id>/pages/', views.story_page_list_create, name='story-page-list-create'),
+
     # Question
     path('<int:story_id>/questions/', views.story_question_list_create, name='story-questions'), # GET : 문제 목록, POST : 문제 생성
 

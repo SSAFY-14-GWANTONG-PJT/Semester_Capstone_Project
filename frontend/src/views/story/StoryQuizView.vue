@@ -1,107 +1,200 @@
 <template>
-    <div class="quiz-container">
-      <div class="quiz-card">
-        <div class="quiz-header">
-          <span class="badge">QUIZ 1/5</span>
-        </div>
-  
-        <div class="question-section">
-          <h2 class="question-text">
-            동화 속 주인공 'Dino'는 무엇을 좋아했나요?
-          </h2>
-        </div>
-  
-        <div class="choices-grid">
-          <button 
-            v-for="(choice, index) in choices" 
-            :key="index"
-            class="choice-btn"
-            :class="{ 
-              'selected': selectedChoice === index,
-              'correct': isSolved && index === correctIndex,
-              'wrong': isSolved && selectedChoice === index && index !== correctIndex
-            }"
-            @click="selectChoice(index)"
-            :disabled="isSolved"
-          >
-            <span class="choice-num">{{ index + 1 }}</span>
-            {{ choice }}
-            <i v-if="isSolved && index === correctIndex" class="fas fa-check result-icon"></i>
-            <i v-if="isSolved && selectedChoice === index && index !== correctIndex" class="fas fa-times result-icon"></i>
-          </button>
-        </div>
-  
-        <div v-if="isSolved" class="feedback-section" :class="isCorrect ? 'success' : 'fail'">
-          <p class="feedback-msg">
-            {{ isCorrect ? '정답입니다! 참 잘했어요! 🎉' : '아쉬워요. 다시 읽어볼까요? 💪' }}
-          </p>
-          <button class="btn btn-primary next-btn">다음 문제 ➡️</button>
-        </div>
+  <div class="story-container">
+    <div class="card">
+      <h2 class="title">🧩 퀴즈 타임!</h2>
+      <p class="subtitle">동화를 잘 읽었는지 확인해볼까요?</p>
+
+      <div v-if="isLoading" class="loading-box">
+        <div class="spinner"></div>
+        <p>AI 선생님이 문제를 만들고 있어요... 🤔</p>
       </div>
+
+      <div v-else-if="questions.length > 0" class="quiz-content">
+        
+        <div v-for="(q, idx) in questions" :key="q.id" class="quiz-item">
+          <h3 class="question-text">Q{{ idx + 1 }}. {{ q.question }}</h3>
+
+          <div class="choices-list">
+            <button 
+              v-for="choice in q.choices" 
+              :key="choice.id"
+              class="choice-btn"
+              :class="{
+                'selected': userAnswers[q.id] === choice.id,
+                'correct': showResult && choice.is_correct,
+                'wrong': showResult && !choice.is_correct && userAnswers[q.id] === choice.id
+              }"
+              @click="selectAnswer(q.id, choice.id)"
+              :disabled="showResult"
+            >
+              {{ choice.content }}
+            </button>
+          </div>
+        </div>
+
+        <button v-if="!showResult" @click="checkAnswers" class="btn btn-primary full-width">
+          채점하기 📝
+        </button>
+
+        <button v-else @click="goBack" class="btn btn-secondary full-width">
+          다른 동화 만들기 🏠
+        </button>
+
+        <div v-if="showResult" class="score-board">
+          <span>당신의 점수는?</span>
+          <strong class="score">{{ calculateScore() }}점!</strong> 🎉
+        </div>
+
+      </div>
+
+      <div v-else class="empty-msg">
+        문제를 불러오지 못했어요 😢
+      </div>
+
     </div>
-  </template>
-  
-  <script setup>
-  import { ref, computed } from 'vue'
-  
-  const choices = ['Sleeping (잠자기)', 'Exploring (탐험하기)', 'Eating (먹기)', 'Singing (노래하기)']
-  const correctIndex = 1 // 정답 인덱스 (Exploring)
-  
-  const selectedChoice = ref(null)
-  const isSolved = ref(false)
-  
-  const isCorrect = computed(() => selectedChoice.value === correctIndex)
-  
-  const selectChoice = (index) => {
-    if (isSolved.value) return
-    selectedChoice.value = index
-    isSolved.value = true
-    // 여기서 서버로 정답 제출 API 호출 가능
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import axios from 'axios'
+import { useCounterStore } from '@/stores/counter'
+
+const route = useRoute()
+const router = useRouter()
+const store = useCounterStore()
+
+const isLoading = ref(true)
+const questions = ref([])
+const userAnswers = ref({})
+const showResult = ref(false)
+
+const storyId = route.params.id
+
+const fetchOrGenerateQuestions = async () => {
+  try {
+    // 1. 기존 문제 조회
+    let res = await axios.get(`${import.meta.env.VITE_API_URL}/stories/${storyId}/questions/`, {
+      headers: { Authorization: `Token ${store.token}` }
+    })
+
+    // 2. 문제가 없으면 생성 요청 (POST)
+    if (res.data.length === 0) {
+      console.log('문제 생성 요청 중...')
+      res = await axios.post(`${import.meta.env.VITE_API_URL}/stories/${storyId}/questions/`, 
+        { num_questions: 3 },
+        { headers: { Authorization: `Token ${store.token}` } }
+      )
+    }
+
+    questions.value = res.data
+  } catch (error) {
+    console.error('퀴즈 로딩 에러:', error)
+    alert('문제를 가져오는 중 오류가 발생했습니다.')
+  } finally {
+    isLoading.value = false
   }
-  </script>
-  
-  <style scoped>
-  .quiz-container {
-    display: flex; justify-content: center; align-items: center;
-    min-height: 90vh; padding: 20px; background: #F0F9FF;
+}
+
+const selectAnswer = (qId, cId) => {
+  if (showResult.value) return
+  userAnswers.value[qId] = cId
+}
+
+const checkAnswers = () => {
+  const answeredCount = Object.keys(userAnswers.value).length
+  if (answeredCount < questions.value.length) {
+    alert('아직 안 푼 문제가 있어요! 🧐')
+    return
   }
-  .quiz-card {
-    background: white; width: 100%; max-width: 600px;
-    padding: 40px; border-radius: 30px;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.1); position: relative;
-  }
-  .badge {
-    background: var(--purple); color: white; padding: 8px 16px;
-    border-radius: 20px; font-weight: 800; font-size: 0.9rem;
-  }
-  .question-text {
-    font-size: 1.8rem; margin: 30px 0 40px; line-height: 1.4; color: var(--text);
-  }
-  
-  .choices-grid { display: grid; gap: 15px; }
-  .choice-btn {
-    padding: 20px; border: 3px solid #F0F0F0; border-radius: 20px;
-    background: white; font-size: 1.1rem; font-weight: bold; color: #555;
-    cursor: pointer; display: flex; align-items: center; transition: all 0.2s;
-    position: relative;
-  }
-  .choice-btn:hover:not(:disabled) { border-color: var(--secondary-light); background: #F0F9FF; }
-  
-  .choice-num {
-    width: 30px; height: 30px; background: #EEE; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center; margin-right: 15px; font-size: 0.9rem;
-  }
-  
-  /* 정답/오답 스타일 */
-  .choice-btn.correct { border-color: var(--primary); background: #F0FFF4; color: var(--primary-dark); }
-  .choice-btn.wrong { border-color: var(--pink); background: #FFF0F5; color: #D32F2F; }
-  .result-icon { margin-left: auto; font-size: 1.2rem; }
-  
-  .feedback-section { margin-top: 30px; text-align: center; animation: popUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-  .feedback-msg { font-size: 1.2rem; font-weight: 800; margin-bottom: 15px; }
-  .success .feedback-msg { color: var(--primary); }
-  .fail .feedback-msg { color: var(--pink); }
-  .next-btn { width: 100%; }
-  
-  @keyframes popUp { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-  </style>
+  showResult.value = true
+}
+
+const calculateScore = () => {
+  let correctCount = 0
+  questions.value.forEach(q => {
+    const selectedId = userAnswers.value[q.id]
+    const correctChoice = q.choices.find(c => c.is_correct)
+    if (selectedId === correctChoice.id) correctCount++
+  })
+  return Math.round((correctCount / questions.value.length) * 100)
+}
+
+const goBack = () => {
+  router.push('/story/create')
+}
+
+onMounted(() => {
+  fetchOrGenerateQuestions()
+})
+</script>
+
+<style scoped>
+/* 공통 레이아웃 */
+.story-container {
+  display: flex;
+  justify-content: center;
+  align-items: center; /* 퀴즈는 중앙 정렬 */
+  min-height: 100vh;
+  padding: 20px;
+  background: linear-gradient(180deg, #FFF9E5 0%, #FFFFFF 100%);
+}
+.card {
+  background: white;
+  padding: 40px;
+  border-radius: 30px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  width: 100%;
+  max-width: 600px;
+  text-align: center;
+}
+.title { color: #FF6B6B; font-size: 2rem; margin-bottom: 5px; font-weight: 900; }
+.subtitle { color: #888; margin-bottom: 30px; font-weight: 600; }
+
+/* 문제 스타일 */
+.quiz-item { margin-bottom: 40px; text-align: left; }
+.question-text { font-size: 1.2rem; font-weight: 800; color: #444; margin-bottom: 15px; }
+
+.choice-btn {
+  display: block;
+  width: 100%;
+  padding: 15px;
+  margin-bottom: 10px;
+  border: 2px solid #EEE;
+  border-radius: 15px;
+  background: white;
+  font-size: 1rem;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+.choice-btn:hover:not(:disabled) { background: #F7F7F7; border-color: #DDD; }
+.choice-btn.selected { background: #E0F2FE; border-color: #0288D1; color: #0288D1; font-weight: bold; }
+
+/* 채점 후 스타일 */
+.choice-btn.correct { background: #E8F5E9; border-color: #2E7D32; color: #2E7D32; font-weight: bold; }
+.choice-btn.wrong { background: #FFEBEE; border-color: #D32F2F; color: #D32F2F; text-decoration: line-through; }
+
+/* 버튼 */
+.btn { padding: 15px; border-radius: 15px; border: none; font-weight: bold; cursor: pointer; font-size: 1.2rem; }
+.btn-primary { background-color: #FF6B6B; color: white; }
+.btn-secondary { background-color: #666; color: white; }
+.full-width { width: 100%; margin-top: 10px; }
+
+/* 점수판 */
+.score-board { margin-top: 20px; font-size: 1.2rem; color: #444; }
+.score { color: #FF6B6B; font-size: 1.5rem; font-weight: 900; }
+
+/* 로딩 스피너 */
+.loading-box { padding: 40px; }
+.spinner {
+  margin: 0 auto 20px;
+  width: 50px; height: 50px;
+  border: 5px solid #f3f3f3; border-top: 5px solid #FF6B6B;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+</style>

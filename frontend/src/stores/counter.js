@@ -36,6 +36,7 @@ export const useCounterStore = defineStore('counter', () => {
     isLoggedIn,
     nickname,
     login,
-    logout
+    logout,
+    token
   }
 })
