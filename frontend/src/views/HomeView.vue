@@ -14,16 +14,16 @@
                 <span>Step-up Story</span>
             </div>
             <nav class="nav-links">
-                <a href="#features">주요 기능</a>
-                <a href="#cycle">학습 로드맵</a>
-                <a href="#team">팀 소개</a>
+                <a href="#features">홈</a>
+                <RouterLink :to="{name: 'community'}">커뮤니티</RouterLink>
+                <a href="#team">학습 로드맵</a>
                 <span v-if="!isLoggedIn">
                     <RouterLink :to="{name:'login'}" class="btn btn-primary start-btn">로그인</RouterLink>
                     <RouterLink :to="{name:'signup'}" class="btn btn-primary start-btn">회원가입</RouterLink>
                 </span>
                 <span v-else style="margin-left: 20px;">
                     <u><b><span style="color: blue;">{{ nickname }}</span>님 반갑습니다!</b></u>
-                    <button class="btn btn-primary start-btn" @click="store.logout">로그아웃</button>
+                    <button class="btn btn-primary start-btn" @click="logoutHandler">로그아웃</button>
                 </span>
                 <RouterLink to="/story/create" class="btn btn-primary start-btn">시작하기</RouterLink>
             </nav>
@@ -186,8 +186,33 @@
 import { RouterLink } from 'vue-router';
 import { useCounterStore } from '@/stores/counter';
 import {storeToRefs} from 'pinia'
+import axios from 'axios'
+import {useRouter} from 'vue-router'
+
+const router = useRouter()
 const store = useCounterStore()
-const { isLoggedIn, nickname } = storeToRefs(store)
+const { isLoggedIn, nickname, refreshToken } = storeToRefs(store);
+
+const logoutHandler = async () => {
+    try {
+        // 1. 서버에 리프레시 토큰을 보내 블랙리스트 등록
+        await axios.post('http://localhost:8000/accounts/logout/', {
+            refresh: refreshToken.value 
+        });
+
+        // 2. 스토어 및 로컬 정보 초기화
+        store.logout()
+
+        alert("로그아웃 되었습니다. 다음에 또 봐요! 👋");
+        router.push('/');
+    } catch (error) {
+        console.error("로그아웃 실패:", error);
+        // 서버 통신에 실패하더라도 일단 클라이언트 정보는 지우는 것이 안전합니다.
+        alert("서버와의 연결이 불안정하여 로컬 세션을 강제로 종료합니다. 안전하게 로그아웃되었습니다. 🛡️")
+        store.logout()
+        router.push('/'); 
+    }
+}
 
 // 별도의 로직은 없습니다.
 </script>
