@@ -6,6 +6,7 @@ import StoryQuizView from '../views/Story/StoryQuizView.vue'
 import StoryReadView from '../views/Story/StoryReadView.vue'
 import LoginView from '@/views/Login/LoginView.vue'
 import SignUpView from '@/views/SignUp/SignUpView.vue'
+import CommunityRoot from '@/views/community/CommunityRoot.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -47,6 +48,12 @@ const router = createRouter({
       path: '/signup',
       name: 'signup',
       component: SignUpView
+    },
+    // 커뮤니티 페이지 추가
+    {
+      path: '/community',
+      name: 'community',
+      component: CommunityRoot
     }
   ],
 })

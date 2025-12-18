@@ -20,7 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-cub5t!$x)j^4^&8bmxu!l%bqzg+lqnu5_acc+5c((tbir)^^fv'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -36,7 +36,8 @@ INSTALLED_APPS = [
     'accounts',
     'community',
     'rest_framework',
-    'rest_framework.authtoken',
+    'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -48,9 +49,24 @@ INSTALLED_APPS = [
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication', # REST 요청 시 토큰 Header에 넣기위해 필요
+        # 1순위: Vue 프론트엔드와 통신하기 위한 JWT 인증
+        'rest_framework_simplejwt.authentication.JWTAuthentication', 
+        
+        # 2순위: 개발 중 브라우저에서 편리하게 API를 테스트하기 위한 세션 인증
         'rest_framework.authentication.SessionAuthentication',
     ]
+}
+
+from datetime import timedelta
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),  # 보통 30분~60분
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),    # 보통 1일~7일
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': False,
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,                      # 위쪽의 SECRET_KEY를 사용
+    'AUTH_HEADER_TYPES': ('Bearer',),               # Vue에서 'Bearer <token>'으로 보냄
+    'BLACKLIST_AFTER_ROTATION': True,               # 토큰 갱신 시 기존 토큰을 블랙리스트에 추가
 }
 
 MIDDLEWARE = [

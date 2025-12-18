@@ -174,9 +174,11 @@
 <script setup>
 import {reactive, onMounted, onUnmounted} from'vue'
 import {useRouter} from 'vue-router'
+import { useCounterStore } from '@/stores/counter'
 import axios from 'axios'
 
 const router = useRouter()
+const store = useCounterStore()
 
 const signUpForm = reactive({
     nickname: '',
@@ -200,7 +202,11 @@ const signUpHandler = async () => {
         // level: signUpForm.level 차후에 db에 level을 만들고 수정할 예정 
     })
     .then(response => {
-        localStorage.setItem('token', response.data.token)
+        store.login(
+            response.data.token, 
+            response.data.refreshToken,
+            response.data.nickname
+        )
         router.push('/')
     })
     .catch(error => {

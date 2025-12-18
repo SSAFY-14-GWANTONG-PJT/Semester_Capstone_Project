@@ -120,7 +120,11 @@ const loginHandler = async () => {
         password: loginForm.password
     })
     .then(response => {
-        store.login(response.data.token, response.data.nickname)
+        store.login(
+            response.data.token, 
+            response.data.refreshToken,
+            response.data.nickname
+        )
         router.push('/')
     })
     .catch(error => {
