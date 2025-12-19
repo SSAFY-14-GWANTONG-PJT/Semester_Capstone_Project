@@ -177,7 +177,7 @@ const signUpHandler = async () => {
         return;
     }
 
-    axios.post('http://localhost:8000/accounts/signup/', {
+    axios.post('api/accounts/signup/', {
         nickname: signUpForm.nickname,
         email: signUpForm.email,
         password: signUpForm.password,

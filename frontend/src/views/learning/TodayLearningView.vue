@@ -1,9 +1,9 @@
 <template>
   <div class="learning-container">
-    <header class="page-header">
+    <header-Today class="page-header">
       <h1 class="page-title">오늘의 학습 📝</h1>
       <p class="page-subtitle">매일매일 조금씩 성장하는 나! 오늘은 무엇을 배워볼까요?</p>
-    </header>
+    </header-Today>
 
     <div class="card-grid">
       
