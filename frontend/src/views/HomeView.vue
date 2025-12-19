@@ -16,7 +16,7 @@
             <nav class="nav-links">
                 <a href="#features">홈</a>
                 <RouterLink :to="{name: 'community'}">커뮤니티</RouterLink>
-                <a href="#team">학습 로드맵</a>
+                <RouterLink :to="{name: 'today-learning'}">학습 로드맵</RouterLink>
                 <span v-if="!isLoggedIn">
                     <RouterLink :to="{name:'login'}" class="btn btn-primary start-btn">로그인</RouterLink>
                     <RouterLink :to="{name:'signup'}" class="btn btn-primary start-btn">회원가입</RouterLink>

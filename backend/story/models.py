@@ -14,7 +14,7 @@ class Story(models.Model):
     story_level = models.IntegerField()
     like_count = models.IntegerField(default=0)
 
-    status = models.CharField(max_length=20, default='completed') # Story를 커뮤니티에 보일지, 말지, 삭제할지를 결정하는 필드
+    status = models.CharField(max_length=20, default='normal') # Story를 커뮤니티에 보일지, 말지, 삭제할지를 결정하는 필드, normal = 나만 볼 수 있음, open = 다들 볼 수 있음, deleted = 나, 모두에게 안보임
     created_at = models.DateTimeField(auto_now_add=True)
 
 class StoryPage(models.Model):
