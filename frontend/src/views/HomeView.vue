@@ -7,29 +7,6 @@
         <div class="shape" style="font-size: 70px;">🎈</div>
     </div>
 
-    <header>
-        <div class="container nav-wrapper">
-            <div class="logo">
-                <div class="logo-icon">📖</div>
-                <span>Step-up Story</span>
-            </div>
-            <nav class="nav-links">
-                <a href="#features">홈</a>
-                <RouterLink :to="{name: 'community'}">커뮤니티</RouterLink>
-                <RouterLink :to="{name: 'today-learning'}">학습 로드맵</RouterLink>
-                <span v-if="!isLoggedIn">
-                    <RouterLink :to="{name:'login'}" class="btn btn-primary start-btn">로그인</RouterLink>
-                    <RouterLink :to="{name:'signup'}" class="btn btn-primary start-btn">회원가입</RouterLink>
-                </span>
-                <span v-else style="margin-left: 20px;">
-                    <u><b><span style="color: blue;">{{ nickname }}</span>님 반갑습니다!</b></u>
-                    <button class="btn btn-primary start-btn" @click="logoutHandler">로그아웃</button>
-                </span>
-                <RouterLink to="/story/create" class="btn btn-primary start-btn">시작하기</RouterLink>
-            </nav>
-        </div>
-    </header>
-
     <section class="container hero">
         <div class="hero-text">
             <h1>AI가 만들어주는<br>우리 아이 맞춤형<br>영어 동화책 📚</h1>
@@ -39,10 +16,10 @@
                 <strong>맞춤형 학습 플래너</strong>를 선물하세요 🎁
             </p>
             <div class="hero-buttons">
-                <RouterLink to="/story/create" class="btn btn-primary">무료 레벨 테스트 시작 🚀</RouterLink>
                 <a href="#features" class="btn btn-secondary">더 알아보기</a>
             </div>
         </div>
+
         <div class="hero-image">
             <div class="hero-mascot">
                 <div class="mascot-face">🤖</div>
@@ -222,6 +199,8 @@ const logoutHandler = async () => {
   Vue의 scoped style로 적용하여 다른 페이지에 영향을 주지 않습니다.
 */
 
+/* style scoped 내의 .home-container를 다음과 같이 수정하세요 */
+
 .home-container {
     font-family: 'Nunito', 'Jua', sans-serif;
     color: var(--text);
@@ -362,7 +341,6 @@ header {
 .nav-links a {
     color: var(--text);
     text-decoration: none;
-    margin-left: 30px;
     font-weight: 700;
     font-size: 1rem;
     transition: all 0.3s;

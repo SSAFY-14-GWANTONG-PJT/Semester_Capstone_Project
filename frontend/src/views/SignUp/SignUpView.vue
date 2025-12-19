@@ -11,23 +11,6 @@
             <div class="star">🌟</div>
         </div>
 
-        <header>
-            <div class="container nav-wrapper">
-                <RouterLink to="/" class="logo">
-                    <div class="logo-icon">📖</div>
-                    <span>Step-up Story</span>
-                </RouterLink>
-                <nav class="nav-links">
-                    <a href="index.html#features">주요 기능</a>
-                    <a href="index.html#cycle">학습 로드맵</a>
-                    <a href="index.html#team">팀 소개</a>
-                    <RouterLink to="/login" style="color: var(--secondary);">
-                        로그인
-                    </RouterLink>
-                </nav>
-            </div>
-        </header>
-
         <section class="signup-section">
             <div class="container">
                 <div class="signup-container" style="margin: 0 auto;">
@@ -365,7 +348,7 @@ onMounted(() => {
                 btn.style.background = 'linear-gradient(135deg, var(--primary-light), var(--primary))';
                 
                 setTimeout(() => {
-                    this.$router.push('/');
+                    $router.push('/');
                 }, 1500);
             }, 2000);
         });
@@ -452,72 +435,6 @@ body {
     z-index: 1;
 }
 
-header {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(20px);
-    padding: 20px 0;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-    animation: slide-down 0.6s ease-out;
-}
-
-@keyframes slide-down {
-    from { transform: translateY(-100%); }
-    to { transform: translateY(0); }
-}
-
-.nav-wrapper {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.logo-nav {
-    font-size: 2rem;
-    font-weight: 900;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    color: var(--text);
-    text-decoration: none;
-    animation: spring-in 0.8s ease-out;
-}
-
-.logo-nav-icon {
-    width: 50px;
-    height: 50px;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-    border-radius: 15px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 1.5rem;
-}
-
-@keyframes spring-in {
-    0% { transform: scale(0) rotate(-180deg); opacity: 0; }
-    60% { transform: scale(1.2) rotate(20deg); }
-    80% { transform: scale(0.95) rotate(-10deg); }
-    100% { transform: scale(1) rotate(0deg); opacity: 1; }
-}
-
-.nav-links a {
-    color: var(--text);
-    text-decoration: none;
-    margin-left: 30px;
-    font-weight: 700;
-    font-size: 1rem;
-    transition: all 0.3s;
-    display: inline-block;
-}
-
-.nav-links a:hover {
-    color: var(--primary);
-    transform: translateY(-3px) scale(1.1);
-}
 
 /* 회원가입 섹션 */
 .signup-section {

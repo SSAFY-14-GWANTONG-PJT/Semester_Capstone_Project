@@ -11,21 +11,6 @@
             <div class="star">🌟</div>
         </div>
 
-        <header>
-            <div class="container nav-wrapper">
-                <RouterLink to="/" class="logo-nav">
-                    <div class="logo-nav-icon">📖</div>
-                    <span>Step-up Story</span>
-                </RouterLink>
-                <nav class="nav-links">
-                    <RouterLink to="/">홈</RouterLink>
-                    <RouterLink to="/community" class="active">커뮤니티</RouterLink>
-                    <RouterLink to="/learning/today">학습 로드맵</RouterLink>
-                    <RouterLink style="color: var(--secondary);" :to="{name: 'login'}">로그인</RouterLink>
-                </nav>
-            </div>
-        </header>
-
         <section class="board-section">
             <div class="container">
                 <div class="board-header">
@@ -286,57 +271,10 @@ body {
     position: relative;
     z-index: 1;
 }
-header {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(20px);
-    padding: 20px 0;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-}
-.nav-wrapper {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-.logo-nav {
-    font-size: 2rem;
-    font-weight: 900;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    color: var(--text);
-    text-decoration: none;
-}
-.logo-nav-icon {
-    width: 50px;
-    height: 50px;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-    border-radius: 15px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 1.5rem;
-}
-.nav-links a {
-    color: var(--text);
-    text-decoration: none;
-    margin-left: 30px;
-    font-weight: 700;
-    font-size: 1rem;
-    transition: all 0.3s;
-}
-.nav-links a:hover {
-    color: var(--primary);
-    transform: translateY(-3px);
-}
-.nav-links a.active {
-    color: var(--secondary);
-}
 
-/* [3] 게시판 스타일 */
+/* -----------------------------------------------------------
+    [3] 커뮤니티 게시판 스타일 (New!)
+    ----------------------------------------------------------- */
 .board-section {
     padding: 40px 0 80px;
 }

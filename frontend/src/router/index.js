@@ -56,6 +56,13 @@ const router = createRouter({
       name: 'community',
       component: CommunityRoot
     },
+    // 마이페이지 추가
+    {
+      path: '/mypage',
+      name: 'mypage',
+      component: MyPageView
+    },
+    // 오늘의 학습
     {
       path: '/learning/today',
       name: 'today-learning',
