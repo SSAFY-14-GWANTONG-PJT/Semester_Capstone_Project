@@ -143,7 +143,7 @@ const createStory = async () => {
     console.log('동화 생성 요청:', payload)
 
     // Axios 요청
-    const response = await axios.post(`${import.meta.env.VITE_API_URL}/stories/`, payload, {
+    const response = await axios.post(`/api/stories/`, payload, {
       headers: {
         Authorization: `${store.token}` // 스토어의 토큰 사용
       }

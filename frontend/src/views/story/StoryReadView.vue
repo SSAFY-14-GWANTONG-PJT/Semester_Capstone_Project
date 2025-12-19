@@ -86,13 +86,13 @@ const currentPage = computed(() => {
 onMounted(async () => {
   try {
     // 동화 기본 정보 가져오기
-    const storyRes = await axios.get(`${import.meta.env.VITE_API_URL}/stories/${storyId}/`, {
+    const storyRes = await axios.get(`/api/stories/${storyId}/`, {
       headers: { Authorization: `Token ${store.token}` }
     })
     story.value = storyRes.data
 
     // 동화 페이지들 가져오기
-    const pagesRes = await axios.get(`${import.meta.env.VITE_API_URL}/stories/${storyId}/pages/`, {
+    const pagesRes = await axios.get(`/api/stories/${storyId}/pages/`, {
       headers: { Authorization: `Token ${store.token}` }
     })
     // 페이지 번호 순서대로 정렬

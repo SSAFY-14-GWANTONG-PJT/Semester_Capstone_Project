@@ -12,7 +12,7 @@ const { isLoggedIn, nickname, refreshToken } = storeToRefs(store)
 // 로그아웃 핸들러 추가
 const logoutHandler = async () => {
   try {
-    await axios.post('http://localhost:8000/accounts/logout/', {
+    await axios.post('http://localhost:8000/api/accounts/logout/', {
       refresh: refreshToken.value 
     });
     store.logout()
@@ -36,10 +36,9 @@ const logoutHandler = async () => {
         </RouterLink>
         <nav class="nav-links">
           <div class="menu-items">
-            <RouterLink to="/">홈</RouterLink>
-            <RouterLink :to="{name: 'community'}">커뮤니티</RouterLink>
-            
-            <RouterLink :to="{name: 'today-learning'}">학습 로드맵</RouterLink>
+            <RouterLink to="/" class="menu1">홈</RouterLink>
+            <RouterLink :to="{name: 'community'}" class="menu2">커뮤니티</RouterLink>
+            <RouterLink :to="{name: 'today-learning'}" class="menu3">학습 로드맵</RouterLink>
           </div>
 
           <div class="nav-auth-section">
@@ -121,6 +120,11 @@ header {
   align-items: center;
   gap: 10px;
   color: var(--text);
+}
+
+.logo:hover {
+  transform: scale(1.1);
+  font-weight: 800;
 }
 
 .logo-icon {
@@ -217,19 +221,75 @@ header {
 }
 
 .nav-sub-btn {
+  display: flex;
+  align-items: center;
+  line-height: 1;
+
+  background: none;
+  border: none;
   font-size: 0.8rem;
   font-weight: 700;
   text-decoration: none;
   color: #666;
+  cursor: pointer;
+  padding: 0;
+    
+  /* ✨ 부드러운 변화를 위한 핵심 속성 */
+  transition: all 0.2s ease-in-out; 
+  display: inline-block; /* transform 적용을 위해 필요 */
+}
+
+.nav-sub-btn:hover {
+    /* 호버 시 빨간색으로 변경 */
+    color: #4d77ff; 
+    
+    /* 호버 시 1.1배 커짐 (125% 확대 상태에서도 잘 작동합니다) */
+    transform: scale(1.1); 
+    
+    /* 글자를 조금 더 진하게 해서 강조 */
+    font-weight: 800;
 }
 
 .nav-btn-logout {
+  display: flex;
+  align-items: center;
+  line-height: 1;
+
   background: none;
   border: none;
   font-size: 0.8rem;
   font-weight: 700;
   color: #999;
   cursor: pointer;
+  padding: 0;
+    
+    /* ✨ 부드러운 변화를 위한 핵심 속성 */
+  transition: all 0.2s ease-in-out; 
+  display: inline-block; /* transform 적용을 위해 필요 */
+}
+
+.nav-btn-logout:hover {
+    /* 호버 시 빨간색으로 변경 */
+    color: #ff4d4f; 
+    
+    /* 호버 시 1.1배 커짐 (125% 확대 상태에서도 잘 작동합니다) */
+    transform: scale(1.1); 
+    
+    /* 글자를 조금 더 진하게 해서 강조 */
+    font-weight: 800;
+}
+
+.menu1:hover,
+.menu2:hover,
+.menu3:hover {
+  /* 호버 시 빨간색으로 변경 */
+    color: #0ead1b; 
+    
+    /* 호버 시 1.1배 커짐 (125% 확대 상태에서도 잘 작동합니다) */
+    transform: scale(1.1); 
+    
+    /* 글자를 조금 더 진하게 해서 강조 */
+    font-weight: 800;
 }
 
 .btn-start-nav {
@@ -240,5 +300,13 @@ header {
   text-decoration: none;
   font-weight: 800;
   font-size: 0.85rem;
+}
+
+.btn-start-nav:hover {
+  transform: scale(1.1);
+  font-weight: 800;
+  background: #028d09;
+  transition: all 0.2s ease-in-out; 
+  display: inline-block; /* transform 적용을 위해 필요 */
 }
 </style>

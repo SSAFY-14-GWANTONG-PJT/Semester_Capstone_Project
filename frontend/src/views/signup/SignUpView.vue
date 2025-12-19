@@ -172,17 +172,17 @@ const signUpForm = reactive({
 })
 
 const signUpHandler = async () => {
-    if (!signUpForm.nickname || !signUpForm.email || !signUpForm.password || !signUpForm.age) {
+    if (!signUpForm.nickname || !signUpForm.email || !signUpForm.password || !signUpForm.age || !signUpForm.level) {
         alert("비어있는 항목을 채워주세요.")
         return;
     }
 
-    axios.post('api/accounts/signup/', {
+    axios.post('/api/accounts/signup/', {
         nickname: signUpForm.nickname,
         email: signUpForm.email,
         password: signUpForm.password,
         age: signUpForm.age,
-        // level: signUpForm.level 차후에 db에 level을 만들고 수정할 예정 
+        level: signUpForm.level
     })
     .then(response => {
         store.login(

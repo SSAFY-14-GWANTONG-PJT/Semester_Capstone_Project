@@ -88,17 +88,17 @@ const showPublishModal = ref(false) // 모달 상태
 
 const storyId = route.params.id
 // API URL 환경변수 사용 (없으면 하드코딩 값 사용)
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+
 
 const fetchOrGenerateQuestions = async () => {
   try {
-    let res = await axios.get(`${API_URL}/stories/${storyId}/questions/`, {
+    let res = await axios.get(`/api/stories/${storyId}/questions/`, {
       headers: { Authorization: `Token ${store.token}` }
     })
 
     if (res.data.length === 0) {
       console.log('문제 생성 요청 중...')
-      res = await axios.post(`${API_URL}/stories/${storyId}/questions/`, 
+      res = await axios.post(`/api/stories/${storyId}/questions/`, 
         { num_questions: 3 },
         { headers: { Authorization: `Token ${store.token}` } }
       )
@@ -146,7 +146,7 @@ const publishStory = async (isPublic) => {
   
   try {
     // (수정됨 ⭐) 헤더에 토큰 추가 & API URL 변수 사용
-    await axios.put(`${API_URL}/stories/${storyId}/`, 
+    await axios.put(`/api/stories/${storyId}/`, 
       { status: newStatus },
       { headers: { Authorization: `Token ${store.token}` } } // 토큰 필수!
     )
