@@ -12,7 +12,7 @@ const { isLoggedIn, nickname, refreshToken } = storeToRefs(store)
 // 로그아웃 핸들러 추가
 const logoutHandler = async () => {
   try {
-    await axios.post('http://localhost:8000/accounts/logout/', {
+    await axios.post('http://localhost:8000/api/accounts/logout/', {
       refresh: refreshToken.value 
     });
     store.logout()

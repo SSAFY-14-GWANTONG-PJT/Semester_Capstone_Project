@@ -173,7 +173,7 @@ const { isLoggedIn, nickname, refreshToken } = storeToRefs(store);
 const logoutHandler = async () => {
     try {
         // 1. 서버에 리프레시 토큰을 보내 블랙리스트 등록
-        await axios.post('http://localhost:8000/accounts/logout/', {
+        await axios.post('http://localhost:8000/api/accounts/logout/', {
             refresh: refreshToken.value 
         });
 

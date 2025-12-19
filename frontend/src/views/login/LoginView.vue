@@ -98,7 +98,7 @@ const loginHandler = async () => {
         return;
     }
 
-    axios.post('http://localhost:8000/accounts/login/', {
+    axios.post('/api/accounts/login/', {
         email: loginForm.email,
         password: loginForm.password
     })

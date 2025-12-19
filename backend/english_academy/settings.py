@@ -81,7 +81,7 @@ MIDDLEWARE = [
 ]
 
 # 개발 단계에서 모든 도메인 허용
-CORS_ALLOWED_ORIGINS = True 
+CORS_ALLOW_ALL_ORIGINS = True 
 
 ROOT_URLCONF = 'english_academy.urls'
 
