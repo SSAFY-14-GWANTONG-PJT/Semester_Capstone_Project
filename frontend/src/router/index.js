@@ -54,7 +54,7 @@ const router = createRouter({
       path: '/community',
       name: 'community',
       component: CommunityRoot
-    }
+    },
   ],
 })
 

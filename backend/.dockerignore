@@ -5,12 +5,13 @@
 
 # 가상환경 (컨테이너는 자체 환경을 쓰므로 필요 없음)
 
-venv/
-env/
 .venv/
+venv/
+.env
 
 # 파이썬 컴파일 파일 (찌꺼기)
 
+__pycache__/
 pycache/
 *.pyc
 *.pyo
@@ -24,3 +25,6 @@ pycache/
 
 db.sqlite3
 db.postgres
+
+# log
+# *.log
