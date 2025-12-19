@@ -145,7 +145,7 @@ const createStory = async () => {
     // Axios 요청
     const response = await axios.post(`${import.meta.env.VITE_API_URL}/stories/`, payload, {
       headers: {
-        Authorization: `Token ${store.token}` // 스토어의 토큰 사용
+        Authorization: `${store.token}` // 스토어의 토큰 사용
       }
     })
 

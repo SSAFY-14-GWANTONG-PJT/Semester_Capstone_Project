@@ -177,7 +177,7 @@ const signUpHandler = async () => {
         return;
     }
 
-    axios.post('http://localhost:8000/accounts/signup/', {
+    axios.post('api/accounts/signup/', {
         nickname: signUpForm.nickname,
         email: signUpForm.email,
         password: signUpForm.password,
@@ -348,7 +348,7 @@ onMounted(() => {
                 btn.style.background = 'linear-gradient(135deg, var(--primary-light), var(--primary))';
                 
                 setTimeout(() => {
-                    $router.push('/');
+                    router.push('/');
                 }, 1500);
             }, 2000);
         });
