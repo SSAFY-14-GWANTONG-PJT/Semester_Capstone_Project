@@ -125,7 +125,7 @@ const goQuiz = () => {
 </script>
 
 <style scoped>
-.read-container { padding: 40px 20px; max-width: 1000px; margin: 0 auto; min-height: 80vh; display: flex; align-items: center; }
+.read-container { padding: 40px 20px; max-width: 100%; margin: 0 auto; min-height: 80vh; display: flex; align-items: center; }
 .loading-container { text-align: center; font-size: 1.5rem; margin-top: 100px; font-weight: bold; color: #888; }
 
 .book-card {
@@ -147,7 +147,7 @@ const goQuiz = () => {
 .real-image {
   width: 100%;
   height: 100%;
-  object-fit: cover; /* 이미지가 꽉 차게 */
+  object-fit: contain; /* 이미지가 꽉 차게 */
   transition: transform 0.5s ease;
 }
 .real-image:hover { transform: scale(1.05); }

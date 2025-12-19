@@ -1,13 +1,13 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '@/views/HomeView.vue'
-import StoryCreateView from '@/views/story/StoryCreateView.vue'
-import StoryLoadingView from '@/views/story/StoryLoadingView.vue'
-import StoryQuizView from '@/views/story/StoryQuizView.vue'
-import StoryReadView from '@/views/story/StoryReadView.vue'
+import HomeView from '../views/HomeView.vue'
+import StoryCreateView from '../views/story/StoryCreateView.vue'
+import StoryLoadingView from '../views/story/StoryLoadingView.vue'
+import StoryQuizView from '../views/story/StoryQuizView.vue'
+import StoryReadView from '../views/story/StoryReadView.vue'
 import LoginView from '@/views/login/LoginView.vue'
 import SignUpView from '@/views/signup/SignUpView.vue'
 import CommunityRoot from '@/views/community/CommunityRoot.vue'
-import MyPageView from '@/views/mypage/MyPageView.vue'
+import TodayLearningView from '@/views/learning/TodayLearningView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -61,7 +61,13 @@ const router = createRouter({
       path: '/mypage',
       name: 'mypage',
       component: MyPageView
-    }
+    },
+    // 오늘의 학습
+    {
+      path: '/learning/today',
+      name: 'today-learning',
+      component: TodayLearningView
+    },
   ],
 })
 

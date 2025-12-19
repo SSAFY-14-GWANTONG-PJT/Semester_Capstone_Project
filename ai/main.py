@@ -185,7 +185,7 @@ async def generate_image_for_page(text: str, index: int, max_retries=2) -> Story
     이미지 생성 with 재시도 로직
     """
     # 이미지 프롬프트 (동화 내용을 영어 묘사로 변환)
-    image_prompt = f"Create a cute 3D rendered children's book illustration: {text[:300]}"
+    image_prompt = f"Create a cute 3D rendered children's book illustration(** No text in Image **): {text[:300]}"
     
     img_base64 = None
     for attempt in range(max_retries):

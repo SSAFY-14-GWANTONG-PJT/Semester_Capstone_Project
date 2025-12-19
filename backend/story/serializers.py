@@ -26,10 +26,18 @@ class StoryListSerializer(serializers.ModelSerializer):
     # 닉네임 뽑아오기
     author_nickname = serializers.CharField(source='author.nickname', read_only=True)
 
+    # 썸네일 뽑아오기
+    thumbnail = serializers.SerializerMethodField()
+
     class Meta :
         model = Story
-        fields = ['id', 'author_nickname', 'title', 'summary', 'genre', 'story_level', 'like_count', 'created_at']
+        fields = ['id', 'author_nickname', 'title', 'summary', 'genre', 'story_level', 'like_count', 'created_at', 'thumbnail', 'status']
     
+    def get_thumbnail(self, obj) : 
+        first_page = obj.pages.first()
+        if first_page :
+            return first_page.image_data
+        return None
 
 class StoryDetailSerializer(serializers.ModelSerializer):
     # 상세 조회용 (페이지 포함)
