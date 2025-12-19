@@ -89,14 +89,12 @@ const router = useRouter()
 const stories = ref([])
 const loading = ref(true)
 
-// API URL (환경변수 없으면 기본값 사용)
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 // 스토리 목록 불러오기
 const fetchStories = async () => {
     try {
         // status='open' 인 스토리만 요청
-        const res = await axios.get(`${API_URL}/stories/`, {
+        const res = await axios.get(`/api/stories/`, {
             params: { status: 'open' }
         })
         stories.value = res.data
