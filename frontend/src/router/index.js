@@ -8,6 +8,7 @@ import LoginView from '@/views/login/LoginView.vue'
 import SignUpView from '@/views/signup/SignUpView.vue'
 import CommunityRoot from '@/views/community/CommunityRoot.vue'
 import TodayLearningView from '@/views/learning/TodayLearningView.vue'
+import MyPageView from '@/views/mypage/MyPageView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),

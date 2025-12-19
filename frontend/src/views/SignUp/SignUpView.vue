@@ -172,7 +172,7 @@ const signUpForm = reactive({
 })
 
 const signUpHandler = async () => {
-    if (!signUpForm.nickname || !signUpForm.email || !signUpForm.password || !signUpForm.age) {
+    if (!signUpForm.nickname || !signUpForm.email || !signUpForm.password || !signUpForm.age || !signUpForm.level) {
         alert("비어있는 항목을 채워주세요.")
         return;
     }
@@ -182,7 +182,7 @@ const signUpHandler = async () => {
         email: signUpForm.email,
         password: signUpForm.password,
         age: signUpForm.age,
-        // level: signUpForm.level 차후에 db에 level을 만들고 수정할 예정 
+        level: signUpForm.level
     })
     .then(response => {
         store.login(
@@ -348,7 +348,7 @@ onMounted(() => {
                 btn.style.background = 'linear-gradient(135deg, var(--primary-light), var(--primary))';
                 
                 setTimeout(() => {
-                    $router.push('/');
+                    router.push('/');
                 }, 1500);
             }, 2000);
         });

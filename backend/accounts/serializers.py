@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from .models import UserTracker
 
 # JWT를 이용한 로그인 구현 간, username이 아닌 email을 적용하기 위한 커스터 마이징
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -30,16 +31,26 @@ User = get_user_model()
 
 class SignUpSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
+    # User 모델에는 없지만 프론트에서 받을 level 정보를 정의합니다.
+    level = serializers.IntegerField(write_only=True)
 
     class Meta:
         model = User
-        fields = ['email', 'password', 'nickname', 'age']
+        fields = ['email', 'password', 'nickname', 'age', 'level']
     
     def create(self, validated_data):
+
+        level_data = validated_data.pop('level')
+
         user = User.objects.create_user(
             email = validated_data['email'],
             password = validated_data['password'],
             nickname = validated_data['nickname'],
             age = validated_data['age']
+        )
+
+        UserTracker.objects.create(
+            user = user,
+            level = level_data
         )
         return user
