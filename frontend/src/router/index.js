@@ -1,12 +1,13 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
-import StoryCreateView from '../views/Story/StoryCreateView.vue'
-import StoryLoadingView from '../views/Story/StoryLoadingView.vue'
-import StoryQuizView from '../views/Story/StoryQuizView.vue'
-import StoryReadView from '../views/Story/StoryReadView.vue'
-import LoginView from '@/views/Login/LoginView.vue'
-import SignUpView from '@/views/SignUp/SignUpView.vue'
+import StoryCreateView from '../views/story/StoryCreateView.vue'
+import StoryLoadingView from '../views/story/StoryLoadingView.vue'
+import StoryQuizView from '../views/story/StoryQuizView.vue'
+import StoryReadView from '../views/story/StoryReadView.vue'
+import LoginView from '@/views/login/LoginView.vue'
+import SignUpView from '@/views/signup/SignUpView.vue'
 import CommunityRoot from '@/views/community/CommunityRoot.vue'
+import TodayLearningView from '@/views/learning/TodayLearningView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -54,7 +55,12 @@ const router = createRouter({
       path: '/community',
       name: 'community',
       component: CommunityRoot
-    }
+    },
+    {
+      path: '/learning/today',
+      name: 'today-learning',
+      component: TodayLearningView
+    },
   ],
 })
 
