@@ -31,11 +31,16 @@ def story_list_create(request) :
         # 필터링
         genre = request.query_params.get('genre')
         level = request.query_params.get('level')
+        story_status = request.query_params.get('status')
 
         if genre:
             queryset = queryset.filter(genre=genre)
         if level:
             queryset = queryset.filter(story_level=level)
+            
+        # status 가 'open' 인 것만 요청 처리
+        if status :
+            queryset = queryset.filter(status=story_status)
             
         serializer = StoryListSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
