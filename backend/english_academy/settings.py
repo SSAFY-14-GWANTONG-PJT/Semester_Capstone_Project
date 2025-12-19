@@ -80,10 +80,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
+# 개발 단계에서 모든 도메인 허용
+CORS_ALLOWED_ORIGINS = True 
 
 ROOT_URLCONF = 'english_academy.urls'
 
