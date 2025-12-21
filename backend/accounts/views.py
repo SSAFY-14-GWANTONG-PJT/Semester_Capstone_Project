@@ -12,6 +12,10 @@ from rest_framework.response import Response
 from rest_framework import status
 from .serializers import SignUpSerializer
 
+from .models import UserTracker
+from django.contrib.auth import get_user_model
+User = get_user_model()
+
 @api_view(['POST'])
 def signup(request):
     serializer = SignUpSerializer(data = request.data)
@@ -28,3 +32,42 @@ def signup(request):
         }, status=status.HTTP_201_CREATED)
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# 회원탈퇴
+from rest_framework.decorators import permission_classes
+from rest_framework.permissions import IsAuthenticated
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def accountDeactive(request):
+    user = request.user
+    refresh_token = request.data.get("refresh")
+
+    # 1. 토큰 블랙리스트 처리 (로그아웃 로직)
+    if refresh_token:
+        try:
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+        except Exception:
+            pass # 이미 만료된 토큰 등 예외 처리
+
+    # 2. 회원 탈퇴 처리 (Soft Delete)
+    user.is_active = False
+    user.save()
+
+    return Response({"message": "탈퇴 및 로그아웃이 완료되었습니다."}, status=200)
+
+# 프로필
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def profile(request):
+    user = request.user
+    
+    try:
+        level = user.trackers.level
+    except UserTracker.DoesNotExist:
+        level = 1 
+    
+    return Response({
+        "level": level, 
+    })

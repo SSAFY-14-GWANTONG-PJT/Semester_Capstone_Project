@@ -81,7 +81,7 @@
 import {reactive, onMounted, onUnmounted} from'vue'
 import {useRouter} from 'vue-router'
 import { useCounterStore } from '@/stores/counter'
-import axios from 'axios'
+import axios from '@/api/index.js'
 
 const store = useCounterStore()
 

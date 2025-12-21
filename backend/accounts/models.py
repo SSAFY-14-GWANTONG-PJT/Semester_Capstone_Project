@@ -45,7 +45,7 @@ class User(AbstractUser):
         return self.email
 
 class UserTracker(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='trackers')
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='trackers')
     level = models.IntegerField(default=1,validators=[MaxValueValidator(10), MinValueValidator(1)])
     experience_point = models.IntegerField(default=0)
     unit_number = models.IntegerField(default=1)

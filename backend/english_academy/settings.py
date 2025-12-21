@@ -60,9 +60,9 @@ REST_FRAMEWORK = {
 from datetime import timedelta
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),  # 보통 30분~60분
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),    # 보통 1일~7일
-    'ROTATE_REFRESH_TOKENS': False,
-    'BLACKLIST_AFTER_ROTATION': False,
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),    # 보통 1일~7일
+    'ROTATE_REFRESH_TOKENS': True,  # 👈 True로 변경: 리프레시 토큰을 쓰면 새 리프레시 토큰도 줌
+    'BLACKLIST_AFTER_ROTATION': True, # 👈 True: 사용한 리프레시 토큰은 다신 못 쓰게 함
     'ALGORITHM': 'HS256',
     'SIGNING_KEY': SECRET_KEY,                      # 위쪽의 SECRET_KEY를 사용
     'AUTH_HEADER_TYPES': ('Bearer',),               # Vue에서 'Bearer <token>'으로 보냄

@@ -158,7 +158,7 @@
 import {reactive, onMounted, onUnmounted} from'vue'
 import {useRouter} from 'vue-router'
 import { useCounterStore } from '@/stores/counter'
-import axios from 'axios'
+import axios from '@/api/index.js'
 
 const router = useRouter()
 const store = useCounterStore()
@@ -310,49 +310,49 @@ onMounted(() => {
     });
 
     // 폼 제출
-    const signupForm = document.getElementById('signupForm');
-    if (signupForm) {
-        signupForm.addEventListener('submit', (e) => {
-            e.preventDefault();
+    // const signupForm = document.getElementById('signupForm');
+    // if (signupForm) {
+    //     signupForm.addEventListener('submit', (e) => {
+    //         e.preventDefault();
             
-            const requiredAgree = document.querySelectorAll('.agree-item[required]');
-            const allAgreed = Array.from(requiredAgree).every(item => item.checked);
+    //         const requiredAgree = document.querySelectorAll('.agree-item[required]');
+    //         const allAgreed = Array.from(requiredAgree).every(item => item.checked);
             
-            if (!allAgreed) {
-                alert('필수 약관에 모두 동의해주세요! 📝');
-                return;
-            }
+    //         if (!allAgreed) {
+    //             alert('필수 약관에 모두 동의해주세요! 📝');
+    //             return;
+    //         }
 
-            const password = document.getElementById('password').value;
-            const passwordConfirm = document.getElementById('passwordConfirm').value;
+    //         const password = document.getElementById('password').value;
+    //         const passwordConfirm = document.getElementById('passwordConfirm').value;
             
-            if (password !== passwordConfirm) {
-                alert('비밀번호가 일치하지 않습니다! 🔒');
-                return;
-            }
+    //         if (password !== passwordConfirm) {
+    //             alert('비밀번호가 일치하지 않습니다! 🔒');
+    //             return;
+    //         }
 
-            const btn = e.target.querySelector('.btn-primary');
-            btn.textContent = '가입 중... 🚀';
-            btn.style.background = 'linear-gradient(135deg, var(--secondary-light), var(--secondary))';
+    //         const btn = e.target.querySelector('.btn-primary');
+    //         btn.textContent = '가입 중... 🚀';
+    //         btn.style.background = 'linear-gradient(135deg, var(--secondary-light), var(--secondary))';
             
-            for (let i = 0; i < 30; i++) {
-                setTimeout(() => {
-                    const x = Math.random() * window.innerWidth;
-                    const y = Math.random() * window.innerHeight;
-                    createParticle(x, y);
-                }, i * 50);
-            }
+    //         for (let i = 0; i < 30; i++) {
+    //             setTimeout(() => {
+    //                 const x = Math.random() * window.innerWidth;
+    //                 const y = Math.random() * window.innerHeight;
+    //                 createParticle(x, y);
+    //             }, i * 50);
+    //         }
 
-            setTimeout(() => {
-                btn.textContent = '가입 완료! ✨';
-                btn.style.background = 'linear-gradient(135deg, var(--primary-light), var(--primary))';
+    //         setTimeout(() => {
+    //             btn.textContent = '가입 완료! ✨';
+    //             btn.style.background = 'linear-gradient(135deg, var(--primary-light), var(--primary))';
                 
-                setTimeout(() => {
-                    router.push('/');
-                }, 1500);
-            }, 2000);
-        });
-    }
+    //             setTimeout(() => {
+    //                 router.push('/');
+    //             }, 1500);
+    //         }, 2000);
+    //     });
+    // }
 });
 </script>
 

@@ -26,7 +26,7 @@
       <div class="dash-card progress-card">
         <div class="card-header">
           <h3>🚀 현재 학습 레벨</h3>
-          <span class="level-badge">LEVEL 3</span>
+          <span class="level-badge">LEVEL {{ level }}</span>
         </div>
         <div class="progress-container">
           <div class="progress-labels">
@@ -36,14 +36,15 @@
           <div class="main-progress-bar">
             <div class="fill" style="width: 75%;"></div>
           </div>
-          <p class="progress-tip">5권만 더 읽으면 <strong>LEVEL 4</strong>가 될 수 있어요! 🔥</p>
+          <p v-if="level < 10" class="progress-tip">5권만 더 읽으면 <strong>LEVEL {{ level + 1 }}</strong>가 될 수 있어요! 🔥</p>
+          <p v-else class="progress-tip">최고 레벨이에요! 대단해요!</p>
         </div>
       </div>
 
       <div class="dash-card stories-card">
         <div class="card-header">
           <h3>📚 최근 읽은 동화</h3>
-          <RouterLink to="/stories" class="more-link">전체보기</RouterLink>
+          <button>전체보기</button>
         </div>
         <div class="story-list">
           <div class="story-item">
@@ -66,34 +67,87 @@
       <div class="dash-card menu-card">
         <h3>🛠️ 계정 관리</h3>
         <div class="menu-list">
-          <RouterLink to="/profile/edit" class="menu-item">
+          <RouterLink :to="{name: 'profile-edit'}" class="menu-item">
             <span>👤 프로필 수정</span>
             <i class="fas fa-chevron-right"></i>
           </RouterLink>
-          <RouterLink to="/settings" class="menu-item">
+          <RouterLink :to="{name: 'profile-learning-settings'}" class="menu-item">
             <span>⚙️ 학습 설정</span>
             <i class="fas fa-chevron-right"></i>
           </RouterLink>
-          <button class="menu-item logout-btn" @click="logoutHandler">
-            <span>🚪 로그아웃</span>
+          <button class="menu-item account-deactivate-btn" @click="showModal = true">
+            <span>🚪 회원탈퇴</span>
           </button>
         </div>
       </div>
     </main>
   </div>
+
+  <Transition name="bounce">
+  <div v-if="showModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="emoji">🥺</div>
+      <h2 class="modal-title">정말 떠나실 건가요?</h2>
+      <p class="modal-text">많은 동화가 기다리고 있어요...</p>
+      
+      <div class="modal-buttons">
+        <button @click="showModal = false" class="btn-keep">계속하기 ✨</button>
+        <button @click="confirmDeactivation" class="btn-leave">탈퇴하기</button>
+      </div>
+    </div>
+  </div>
+</Transition>
 </template>
 
 <script setup>
 import { storeToRefs } from 'pinia';
 import { useCounterStore } from '@/stores/counter';
+import { RouterLink, RouterView, useRouter } from 'vue-router'
+import {ref, onMounted} from 'vue'
+import axios from '@/api/index.js'
 
+const router = useRouter()
 const store = useCounterStore();
 const { nickname } = storeToRefs(store);
 
-const logoutHandler = () => {
-  // App.vue에서 정의한 로그아웃 로직을 호출하거나 스토어 액션 사용
-  store.logout();
+const level = ref(0)
+
+// 회원탈퇴 --------------------------------------------------
+const showModal = ref(false)
+
+const confirmDeactivation = async () => {
+  showModal.value = false
+  await accountDeactiveHandler()
+}
+
+const accountDeactiveHandler = async () => {
+  try {
+    await axios.post('/api/accounts/accountDeactive/', {
+      refresh: store.refreshToken.value 
+    });
+    alert("회원탈퇴 되었습니다. 👋\n그동안 이용해주셔서 감사합니다!")
+    store.logout()
+    router.push('/')
+  } catch (error) {
+    console.error("회원탈퇴 실패:", error)
+    store.logout()
+    router.push('/')
+  }
 };
+
+onMounted(async () => {
+  try {
+    const response = await axios.get(
+      '/api/accounts/profile/'
+    )
+
+    level.value = response.data.level
+  } catch (error) {
+    console.error("프로필 가져오기 실패:", error)
+  }
+})
+
+// 회원탈퇴 --------------------------------------------------
 </script>
 
 <style scoped>
@@ -251,12 +305,56 @@ const logoutHandler = () => {
   transition: all 0.2s;
 }
 .menu-item:hover { background: #f0f4f8; color: var(--secondary); }
-.logout-btn:hover { background: #fff5f7; color: #ff6b9d; }
+
+.account-deactivate-btn {
+  color: red;
+}
+.account-deactivate-btn:hover { background: #fff5f7; color: #f7135f; }
 
 @media (max-width: 992px) {
   .dashboard-grid { grid-template-columns: 1fr; }
   .menu-card { grid-column: 1; }
   .banner-inner { flex-direction: column; text-align: center; gap: 30px; }
   .user-main-info { flex-direction: column; }
+}
+
+/* 회원탈퇴 모달 */ 
+/* 모달 배경 */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px);
+  display: flex; justify-content: center; align-items: center; z-index: 999;
+}
+
+/* 모달 박스 */
+.modal-content {
+  background: white; padding: 30px; border-radius: 30px;
+  text-align: center; border: 5px solid #FFD54F;
+  width: 90%; max-width: 400px;
+}
+
+.emoji { font-size: 3rem; margin-bottom: 10px; }
+.modal-title { font-size: 1.5rem; color: #333; font-weight: 900; }
+.modal-text { color: #888; margin-bottom: 25px; font-weight: 700; }
+
+/* 버튼들 */
+.modal-buttons { display: flex; gap: 10px; }
+.btn-keep {
+  flex: 1; padding: 12px; background: #FF6B6B; color: white;
+  border: none; border-radius: 15px; font-weight: 800; cursor: pointer;
+  box-shadow: 0 4px 0 #FA5252;
+}
+.btn-leave {
+  flex: 1; padding: 12px; background: #EEE; color: #888;
+  border: none; border-radius: 15px; font-weight: 800; cursor: pointer;
+}
+
+/* 통통 튀는 애니메이션 */
+.bounce-enter-active { animation: bounce-in 0.5s; }
+.bounce-leave-active { animation: bounce-in 0.5s reverse; }
+@keyframes bounce-in {
+  0% { transform: scale(0); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
 }
 </style>

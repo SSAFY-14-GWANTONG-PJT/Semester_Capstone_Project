@@ -2,7 +2,7 @@
 import { RouterLink, RouterView, useRouter } from 'vue-router'
 import { useCounterStore } from '@/stores/counter'
 import { storeToRefs } from 'pinia'
-import axios from 'axios'
+import axios from '@/api/index.js'
 
 // 로직 추가: 스토어에서 상태 가져오기
 const router = useRouter()
@@ -11,18 +11,24 @@ const { isLoggedIn, nickname, refreshToken } = storeToRefs(store)
 
 // 로그아웃 핸들러 추가
 const logoutHandler = async () => {
-  try {
-    await axios.post('http://localhost:8000/api/accounts/logout/', {
-      refresh: refreshToken.value 
-    });
-    store.logout()
-    alert("로그아웃 되었습니다. 👋")
-    router.push('/')
-  } catch (error) {
-    console.error("로그아웃 실패:", error)
-    store.logout()
-    router.push('/')
-  }
+    try {
+        // 1. 서버에 리프레시 토큰을 보내 블랙리스트 등록
+        await axios.post('http://localhost:8000/api/accounts/logout/', {
+            refresh: refreshToken.value 
+        });
+
+        // 2. 스토어 및 로컬 정보 초기화
+        store.logout()
+
+        alert("로그아웃 되었습니다. 다음에 또 봐요! 👋");
+        router.push('/');
+    } catch (error) {
+        console.error("로그아웃 실패:", error);
+        // 서버 통신에 실패하더라도 일단 클라이언트 정보는 지우는 것이 안전합니다.
+        alert("서버와의 연결이 불안정하여 로컬 세션을 강제로 종료합니다. 안전하게 로그아웃되었습니다. 🛡️")
+        store.logout()
+        router.push('/'); 
+    }
 }
 </script>
 
