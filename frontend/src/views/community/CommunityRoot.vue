@@ -83,7 +83,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
-import axios from 'axios'
+import axios from '@/api/index.js'
 
 const router = useRouter()
 const stories = ref([])

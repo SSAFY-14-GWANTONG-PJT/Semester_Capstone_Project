@@ -9,6 +9,8 @@ import SignUpView from '@/views/signup/SignUpView.vue'
 import CommunityRoot from '@/views/community/CommunityRoot.vue'
 import TodayLearningView from '@/views/learning/TodayLearningView.vue'
 import MyPageView from '@/views/mypage/MyPageView.vue'
+import ProfileEditView from '@/components/ProfileEditView.vue'
+import IndividualSettingsView from '@/components/IndividualSettingsView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -69,6 +71,18 @@ const router = createRouter({
       name: 'today-learning',
       component: TodayLearningView
     },
+    // 프로필 수정
+    {
+      path: '/profile/edit/',
+      name: 'profile-edit',
+      component: ProfileEditView
+    },
+    // 프로필 학습 설정
+    {
+      path: '/profile/settings/',
+      name: 'profile-learning-settings',
+      component: IndividualSettingsView
+    }
   ],
 })
 

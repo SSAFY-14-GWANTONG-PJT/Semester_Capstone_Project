@@ -22,7 +22,7 @@
 
         <div class="hero-image">
             <div class="hero-mascot">
-                <div class="mascot-face">🤖</div>
+                <img style="width: 550px" src="@/assets/test.png" alt="...">
             </div>
             <div class="floating-icon">⭐</div>
             <div class="floating-icon">🎨</div>
@@ -160,36 +160,6 @@
 </template>
 
 <script setup>
-import { RouterLink } from 'vue-router';
-import { useCounterStore } from '@/stores/counter';
-import {storeToRefs} from 'pinia'
-import axios from 'axios'
-import {useRouter} from 'vue-router'
-
-const router = useRouter()
-const store = useCounterStore()
-const { isLoggedIn, nickname, refreshToken } = storeToRefs(store);
-
-const logoutHandler = async () => {
-    try {
-        // 1. 서버에 리프레시 토큰을 보내 블랙리스트 등록
-        await axios.post('http://localhost:8000/api/accounts/logout/', {
-            refresh: refreshToken.value 
-        });
-
-        // 2. 스토어 및 로컬 정보 초기화
-        store.logout()
-
-        alert("로그아웃 되었습니다. 다음에 또 봐요! 👋");
-        router.push('/');
-    } catch (error) {
-        console.error("로그아웃 실패:", error);
-        // 서버 통신에 실패하더라도 일단 클라이언트 정보는 지우는 것이 안전합니다.
-        alert("서버와의 연결이 불안정하여 로컬 세션을 강제로 종료합니다. 안전하게 로그아웃되었습니다. 🛡️")
-        store.logout()
-        router.push('/'); 
-    }
-}
 
 // 별도의 로직은 없습니다.
 </script>
