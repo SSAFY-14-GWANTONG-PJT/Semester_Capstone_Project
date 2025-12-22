@@ -9,7 +9,7 @@
 
     <section class="container hero">
         <div class="hero-text">
-            <h1>AI가 만들어주는<br>우리 아이 맞춤형<br>영어 동화책 📚</h1>
+            <h1>AI가 만들어주는<br>우리 아이 맞춤형<br>영어 동화책</h1>
             <p>
                 매번 똑같은 교재는 이제 그만!<br>
                 아이의 흥미와 수준을 분석해 <strong>매일 새로운 동화</strong>와<br>

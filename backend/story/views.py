@@ -33,14 +33,9 @@ def story_list_create(request) :
         level = request.query_params.get('level')
         story_status = request.query_params.get('status')
 
-        if genre:
-            queryset = queryset.filter(genre=genre)
-        if level:
-            queryset = queryset.filter(story_level=level)
-            
-        # status 가 'open' 인 것만 요청 처리
-        if status :
-            queryset = queryset.filter(status=story_status)
+        if genre: queryset = queryset.filter(genre=genre)
+        if level: queryset = queryset.filter(story_level=level)
+        if story_status: queryset = queryset.filter(status=story_status)
             
         serializer = StoryListSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -69,45 +64,37 @@ def story_list_create(request) :
 
         # AI 서버로 요청
         response = requests.post(f"{AI_SERVER_URL}/generate-story", json=ai_payload)
-
-        # AI 서버 에러 시 처리
-        if response.status_code != 200 :
-            print(f"동화 생성 실패 : {response.text}")
-            return Response(
-                {'errors' : 'AI Story Generation Failed', 'details' : response.text},
-                status=status.HTTP_503_SERVICE_UNAVAILABLE
-            )
-        
+            
+        if response.status_code != 200:
+            return Response({'errors': 'AI Story Generation Failed'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            
         story_data = response.json()
-        print("AI 동화 생성 완료, DB 저장 시작..")
-
-        # DB 저장(Story와 StoryPage 둘 다) - 도중에 실패하면 롤백 되어야 하기에 atomic 사용
+            
         with transaction.atomic():
             new_story = Story.objects.create(
-                author=request.user, # 요청을 보낸 로그인 유저
-                    study_set=story_data.get('study_set_id'),
-                    title=story_data.get('title'),
-                    summary=story_data.get('summary'),
-                    genre=story_data.get('genre'),
-                    keywords=story_data.get('keywords'),
-                    story_level=story_data.get('story_level'),
-                    status='completed'
+                author=request.user,
+                study_set_id=story_data.get('study_set_id'),
+                title=story_data.get('title'),
+                summary=story_data.get('summary'),
+                genre=story_data.get('genre'),
+                keywords=story_data.get('keywords'),
+                story_level=story_data.get('story_level'),
+                status='completed'
             )
 
             pages_data = story_data.get('pages', [])
-
-            # 받아온 page 순회하며 각각 생성 해주기
-            for page in pages_data :
+            
+            for page in pages_data:
                 StoryPage.objects.create(
-                        story=new_story,
-                        page_number=page.get('page_number'),
-                        content=page.get('content'),
-                        image_data=page.get('image_data') # Base64 문자열
-                    )
+                    story=new_story,
+                    page_number=page.get('page_number'),
+                    content_en=page.get('content_en'), 
+                    content_ko=page.get('content_kr'), # [핵심] AI 응답(content_kr)을 DB(content_ko)에 저장
+                    image_data=page.get('image_data')
+                    # audio는 null로 저장 (Lazy Loading)
+                )
 
-        # Vue로 반환        
         return Response(StoryDetailSerializer(new_story).data, status=status.HTTP_201_CREATED)
-
         
     # 만약 AI 서버 연결 실패라면
     except requests.exceptions.RequestException as e :
@@ -124,6 +111,45 @@ def story_list_create(request) :
             {'errors' : 'Error Occured'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def generate_page_tts(request, page_id):
+    page = get_object_or_404(StoryPage, pk=page_id)
+
+    if page.audio_en:
+        return Response({'audio_en': page.audio_en}, status=status.HTTP_200_OK)
+
+    try:
+        tts_payload = {
+            "text": page.content_en,
+            "voice_name": "Aoede"
+        }
+        
+        # [수정] timeout을 60초로 넉넉하게 설정합니다.
+        # AI 서버가 200 OK를 줄 때까지 Django가 끈기 있게 기다리게 합니다.
+        response = requests.post(
+            f"{AI_SERVER_URL}/generate-tts", 
+            json=tts_payload,
+            timeout=60 
+        )
+        
+        if response.status_code == 200:
+            audio_data = response.json().get('audio_data')
+            page.audio_en = audio_data
+            page.save()
+            return Response({'audio_en': audio_data}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'AI Server Error'}, status=response.status_code)
+
+    except requests.exceptions.Timeout:
+        # 60초가 넘어가도 응답이 없을 때만 타임아웃을 냅니다.
+        print(f"페이지 {page_id} TTS 생성 타임아웃 발생")
+        return Response({'error': 'TTS 생성 시간이 너무 오래 걸립니다.'}, status=status.HTTP_504_GATEWAY_TIMEOUT)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    
 
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticatedOrReadOnly])
@@ -146,7 +172,7 @@ def story_question_list_create(request, story_id) :
                 status=status.HTTP_400_BAD_REQUEST
                                         )
         
-        full_story_text = " ".join([page.content for page in pages])
+        full_story_text = " ".join([page.content_en for page in pages])
 
         # AI 서버로 보낼 데이터 
         num_questions = request.data.get('num_questions', 3)

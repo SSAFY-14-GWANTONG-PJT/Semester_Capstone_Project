@@ -19,7 +19,10 @@ class Story(models.Model):
 class StoryPage(models.Model):
     story = models.ForeignKey(Story, on_delete=models.CASCADE, related_name='pages')
     page_number = models.IntegerField()
-    content = models.TextField() # 본문 내용
+    content_en = models.TextField() # 본문 내용 (영어)
+    content_ko = models.TextField() # 본문 내용 (한국어)
+    audio_en = models.TextField(null=True, blank=True) # 영어 오디오 파일 데이터
+    audio_ko = models.TextField(null=True, blank=True) # 한국어 오디오 파일 데이터
     image_data = models.TextField(null=True, blank=True) # 이미지, Base64 예정
 
     class Meta:

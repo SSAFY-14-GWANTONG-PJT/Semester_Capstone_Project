@@ -16,4 +16,7 @@ urlpatterns = [
 
     # Choice
     path('questions/<int:question_id>/choices/', views.question_choice_create, name='question-choices'), # POST : 특정 문제에 선택지 추가 할 수 있도록
+    
+    # 페이지 별 TTS 생성
+    path('page/<int:page_id>/tts/', views.generate_page_tts, name='generate-page-tts'),
 ] 
