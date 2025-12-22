@@ -1,27 +1,37 @@
-import { ref, computed,watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { defineStore } from 'pinia'
 
 export const useCounterStore = defineStore('counter', () => {
   const token = ref(null)
   const refreshToken = ref(null)
   const nickname = ref('')
+  const userId = ref(null) // 사용자 ID 추가
   const experience = ref(0)
   const isLoggedIn = computed(() => !!token.value)
 
-  function login(newToken, newRefreshToken , newNickname) {
+  function login(newToken, newRefreshToken, newNickname) {
     token.value = newToken
     refreshToken.value = newRefreshToken
     nickname.value = newNickname
+
+    // 토큰에서 ID 추출
+    try {
+      const payload = JSON.parse(atob(newToken.split('.')[1]))
+      userId.value = payload.user_id
+    } catch (e) {
+      console.error("토큰 파싱 실패", e)
+    }
   }
 
   function logout() {
     token.value = null
     refreshToken.value = null
     nickname.value = ''
+    userId.value = null
   }
 
   const savedSettings = JSON.parse(localStorage.getItem('user-settings') || '{}')
-  
+
   const darkMode = ref(savedSettings.darkMode ?? false)
   const soundEffects = ref(savedSettings.soundEffects ?? true)
   const autoPlay = ref(savedSettings.autoPlay ?? true)
@@ -51,25 +61,26 @@ export const useCounterStore = defineStore('counter', () => {
     applyTheme()
   }
 
-  return { 
+  return {
     isLoggedIn,
     nickname,
+    userId,
     experience,
     login,
     logout,
     token,
     refreshToken,
-    darkMode, 
-    soundEffects, 
-    autoPlay, 
-    dailyGoal, 
-    toggleDarkMode, 
+    darkMode,
+    soundEffects,
+    autoPlay,
+    dailyGoal,
+    toggleDarkMode,
     applyTheme
   }
-},{
-  persist:{
+}, {
+  persist: {
     key: 'auth-storage',
-    paths:['token', 'refreshToken' ,'nickname'],
+    paths: ['token', 'refreshToken', 'nickname', 'userId'],
   }
 }
 )

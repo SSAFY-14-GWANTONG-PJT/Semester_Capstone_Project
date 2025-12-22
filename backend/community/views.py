@@ -6,11 +6,11 @@ from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnl
 from rest_framework.response import Response
 from rest_framework import status
 
-from .models import Post, Comment, LikeComment
+from .models import Post, Comment, LikeComment, LikePost
 from .serializers import PostSerializer, CommentSerializer
 
 @api_view(['GET', 'POST'])
-@permission_classes([IsAuthenticatedOrReadOnly])
+@permission_classes([IsAuthenticated])
 def post_list_create(request):
     # 게시글 목록 조회
     if request.method == 'GET':
@@ -28,14 +28,6 @@ def post_list_create(request):
         # 전체 반환, 차후 pagination
         serializer = PostSerializer(qs, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
-    # 2) 게시글 작성
-    # POST /posts  (로그인 필요)
-    if not request.user.is_authenticated:
-        return Response(
-            {'detail': '로그인이 필요합니다.'},
-            status=status.HTTP_401_UNAUTHORIZED
-        )
 
     serializer = PostSerializer(data=request.data)
     if serializer.is_valid():
@@ -81,36 +73,35 @@ def post_detail(request, post_id):
         post.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-# LikePost 모델이 아직 없어 migrations 시 에러가 발생하기에, 주석처리 합니다
-# @api_view(['POST'])
-# @permission_classes([IsAuthenticated])
-# def post_like_toggle(request, post_id):
-#     post = get_object_or_404(Post, pk=post_id)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def post_like_toggle(request, post_id):
+    post = get_object_or_404(Post, pk=post_id)
 
-#     like_obj, created = LikePost.objects.get_or_create(
-#         user=request.user,
-#         post=post,
-#     )
+    like_obj, created = LikePost.objects.get_or_create(
+        user=request.user,
+        post=post,
+    )
 
-#     if not created:
-#         # 좋아요 -> 취소
-#         like_obj.delete()
-#         liked = False
-#     else:
-#         liked = True
+    if not created:
+        # 좋아요 -> 취소
+        like_obj.delete()
+        liked = False
+    else:
+        liked = True
 
-#     # Post.like 카운트 필드 동기화
-#     if hasattr(post, 'like'):
-#         post.like = LikePost.objects.filter(post=post).count()
-#         post.save(update_fields=['like'])
+    # Post.like 카운트 필드 동기화
+    if hasattr(post, 'like'):
+        post.like = LikePost.objects.filter(post=post).count()
+        post.save(update_fields=['like'])
 
-#     return Response(
-#         {
-#             'liked': liked,
-#             'like_count': getattr(post, 'like', None),
-#         },
-#         status=status.HTTP_200_OK
-#     )
+    return Response(
+        {
+            'liked': liked,
+            'like_count': getattr(post, 'like', None),
+        },
+        status=status.HTTP_200_OK
+    )
 
 # 댓글목록 작성 수정 중
 @api_view(['GET', 'POST']) # get: 목록 , post : 작성(user=request.user)
@@ -130,9 +121,9 @@ def comment_list_create(request, post_id):
 
     # POST
     serializer = CommentSerializer(data=request.data, context={'request': request})
-    serializer.is_valid(raise_exception=True)
-    serializer.save(user=request.user, post=post)
-    return Response(serializer.data, status=status.HTTP_201_CREATED)
+    if serializer.is_valid(raise_exception=True):
+        serializer.save(user=request.user, post=post)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 # 댓글 수정 삭제
 @api_view(['PUT', 'DELETE'])

@@ -15,6 +15,16 @@ class Post(models.Model):
     def __str__(self):
         return self.title
 
+class LikePost(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='liked_posts')
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='likes')
+    liked_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["user", "post"], name="unique_like_post")
+        ]
+
 class Comment(models.Model) : 
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='comments')
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='comments')
@@ -31,4 +41,3 @@ class LikeComment(models.Model):
         constraints = [
             models.UniqueConstraint(fields=["user", "comment"], name="unique_like_comment")
         ]
-

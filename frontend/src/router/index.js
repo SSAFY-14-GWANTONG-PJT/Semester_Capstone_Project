@@ -42,7 +42,7 @@ const router = createRouter({
       name: 'StoryQuiz',
       component: StoryQuizView
     },
-    
+
     // 로그인 페이지 추가
     {
       path: '/login',
@@ -60,6 +60,16 @@ const router = createRouter({
       path: '/community',
       name: 'community',
       component: CommunityRoot
+    },
+    {
+      path: '/community/create',
+      name: 'community-create',
+      component: () => import('@/components/community/CommunityCreate.vue')
+    },
+    {
+      path: '/community/:id',
+      name: 'community-detail',
+      component: () => import('@/components/community/CommunityDetail.vue')
     },
     // 마이페이지 추가
     {

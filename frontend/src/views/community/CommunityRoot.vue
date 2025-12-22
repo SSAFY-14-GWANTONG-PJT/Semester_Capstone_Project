@@ -25,42 +25,48 @@
                 </div>
 
                 <div class="category-tabs">
-                    <button class="tab-btn active">전체 ✨</button>
-                    <button class="tab-btn">동화 공유 📖</button>
-                    <button class="tab-btn">자유 수다 💬</button>
+                    <button class="tab-btn" :class="{ active: currentTab === 'all' }" @click="setTab('all')">전체 ✨</button>
+                    <!-- <button class="tab-btn" :class="{ active: currentTab === 'story' }" @click="setTab('story')">동화 공유 📖</button>
+                    <button class="tab-btn" :class="{ active: currentTab === 'chat' }" @click="setTab('chat')">자유 수다 💬</button> -->
                 </div>
 
                 <div v-if="loading" class="loading-area">
                     <i class="fas fa-spinner fa-spin"></i> 이야기를 불러오고 있어요...
                 </div>
 
-                <div v-else-if="stories.length === 0" class="empty-area">
+                <div v-else-if="posts.length === 0" class="empty-area">
                     <p>아직 등록된 이야기가 없어요 😢<br>첫 번째 작가가 되어보세요!</p>
                 </div>
 
                 <div v-else class="post-grid">
                     <div 
-                        v-for="story in stories" 
-                        :key="story.id" 
+                        v-for="post in posts" 
+                        :key="post.id" 
                         class="post-card"
-                        @click="goDetail(story.id)"
+                        @click="goDetail(post.id)"
                     >
-                        <div class="card-header-img" :style="getCardHeaderStyle(story.thumbnail)">
-                            <span class="genre-badge">{{ getGenreName(story.genre) }}</span>
-                            <div v-if="!story.thumbnail" class="card-icon">📖</div>
+                        <!-- 게시글은 썸네일이 없을 수도 있지만, 만약 이미지 첨부 기능이 생긴다면 활용 -->
+                        <div class="card-header-img" :style="getCardHeaderStyle(null)">
+                            <span class="genre-badge">{{ getGenreName(post.genre) }}</span>
+                            <div class="card-icon">💬</div>
                         </div>
 
                         <div class="card-body">
-                            <h3 class="card-title">{{ story.title }}</h3>
-                            <p class="card-excerpt">{{ story.summary || '내용 요약이 없습니다.' }}</p>
+                            <h3 class="card-title">{{ post.title }}</h3>
+                            <!-- content가 길면 잘라서 보여주기 -->
+                            <p class="card-excerpt">{{ post.content }}</p>
                             
                             <div class="card-footer">
                                 <div class="author">
-                                    <div class="author-avatar">{{ story.author_nickname ? story.author_nickname[0] : 'U' }}</div>
-                                    <span>{{ story.author_nickname }}</span>
+                                    <!-- 닉네임 정보가 post.user_nickname 등으로 온다고 가정하거나, user ID만 온다면 추가 처리가 필요할 수 있음.
+                                         현재 backend serializer는 __all__이라 user ID만 올 가능성이 높음.
+                                         User 정보를 가져오려면 Serializer 수정이 필요할 수 있음. 
+                                         일단은 'User'로 표시하거나 post.user가 객체인지 확인 필요. -->
+                                    <div class="author-avatar">U</div>
+                                    <span>User {{ post.user }}</span> 
                                 </div>
                                 <div class="stats">
-                                    <span class="stat-item likes"><i class="fas fa-heart"></i> {{ story.like_count }}</span>
+                                    <span class="stat-item likes"><i class="fas fa-heart"></i> {{ post.like || 0 }}</span>
                                     <span class="stat-item comments"><i class="fas fa-comment"></i> 0</span>
                                 </div>
                             </div>
@@ -82,24 +88,28 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useRouter, RouterLink } from 'vue-router'
+import { useRouter } from 'vue-router'
 import axios from '@/api/index.js'
 
 const router = useRouter()
-const stories = ref([])
+const posts = ref([])
 const loading = ref(true)
+const currentTab = ref('all') // 'all', 'story', 'chat'
 
-
-// 스토리 목록 불러오기
-const fetchStories = async () => {
+// 게시글 목록 불러오기
+const fetchPosts = async () => {
+    loading.value = true
     try {
-        // status='open' 인 스토리만 요청
-        const res = await axios.get(`/api/stories/`, {
-            params: { status: 'open' }
-        })
-        stories.value = res.data
+        // status 필터링은 백엔드 구현에 따라 다를 수 있음. 
+        // 현재 백엔드 views.py에는 status 파라미터 처리가 되어 있음.
+        // 탭에 따라 status를 다르게 보낼 수도 있고, 프론트에서 필터링 할 수도 있음.
+        // 여기서는 우선 전체를 불러오고 프론트에서 탭에 따라 필터링하거나,
+        // API에 status 파라미터를 전달하는 방식을 사용할 수 있음.
+        // 일단 전체 목록을 불러옵니다.
+        const res = await axios.get(`/api/community/posts`)
+        posts.value = res.data
     } catch (error) {
-        console.error("동화 목록 로드 실패:", error)
+        console.error("게시글 목록 로드 실패:", error)
     } finally {
         loading.value = false
     }
@@ -107,50 +117,53 @@ const fetchStories = async () => {
 
 // 상세 페이지 이동
 const goDetail = (id) => {
-    router.push(`/story/read/${id}`)
+    router.push(`/community/${id}`)
 }
 
 const goToCreate = () => {
-    router.push('/story/create')
+    router.push('/community/create')
+}
+
+// 탭 변경
+const setTab = (tab) => {
+    currentTab.value = tab
+    // 탭 변경 시 API를 다시 호출하거나 리스트를 필터링 할 수 있음
+    // 예: fetchPosts(tab)
 }
 
 // 헬퍼 함수들
 const getGenreName = (code) => {
+    // 게시글에는 장르가 없을 수 있으므로 체크
+    if (!code) return '자유'
     const map = {
         hero: '영웅', happy: '행복', sad: '슬픔',
         romance: '로맨스', horror: '호러', fantasy: '판타지', sf: 'SF/우주'
     }
-    return map[code] || '동화'
+    return map[code] || '기타'
 }
 
-// 썸네일 있으면 배경이미지로, 없으면 그라데이션
+// 썸네일 스타일 (게시글은 썸네일이 없을 수 있음)
 const getCardHeaderStyle = (thumbnail) => {
     if (thumbnail) {
         let imageUrl = thumbnail;
-        
-        // 만약 썸네일이 'http'로 시작하지 않고(웹주소 아님),
-        // 'data:image'로도 시작하지 않는다면(이미지 태그 아님) -> 순수 Base64 데이터로 간주
         if (!thumbnail.startsWith('http') && !thumbnail.startsWith('data:image')) {
             imageUrl = `data:image/png;base64,${thumbnail}`;
         }
-
         return {
             backgroundImage: `url(${imageUrl})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center'
         }
     }
-    // 썸네일 없으면 기본 그라데이션 배경
     return {
         background: 'linear-gradient(135deg, #F0F9FF 0%, #FFF9E5 100%)'
     }
 }
 
-// 파티클 효과 (디자인 요소)
+// 파티클 효과
 onMounted(() => {
-    fetchStories() // 데이터 로드 시작
+    fetchPosts()
 
-    // 배경 클릭 시 파티클 생성
     document.addEventListener('click', (e) => {
         if(e.target.closest('.post-card') || e.target.closest('.write-btn')) return;
         for (let i = 0; i < 3; i++) {
