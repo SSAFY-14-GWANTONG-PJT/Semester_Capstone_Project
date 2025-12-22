@@ -19,7 +19,7 @@ class QuestionSerializer(serializers.ModelSerializer):
 class StoryPageSerializer(serializers.ModelSerializer):
     class Meta: 
         model = StoryPage
-        fields = ['id', 'page_number', 'content', 'image_data']
+        fields = ['id', 'page_number', 'content_en', 'content_ko', 'image_data', 'audio_en', 'audio_ko']
 
 class StoryListSerializer(serializers.ModelSerializer):
     # 목록 조회용(커뮤니티에 동화 보기)

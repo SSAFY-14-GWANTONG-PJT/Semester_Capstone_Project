@@ -1,5 +1,5 @@
 <template>
-  <div class="read-container" v-if="!isLoading && story && pages.length > 0">
+<div class="read-container" v-if="!isLoading && story && pages.length > 0">
     <div class="book-card">
       <div class="story-image">
         <img 
@@ -8,9 +8,7 @@
           alt="삽화"
           class="real-image"
         />
-        <div v-else class="placeholder-img">
-          🎨 그림을 불러오는 중...
-        </div>
+        <div v-else class="placeholder-img">🎨 그림을 불러오는 중...</div>
       </div>
       
       <div class="story-content">
@@ -20,46 +18,28 @@
           <span class="page-indicator">Page {{ pageIndex + 1 }} / {{ pages.length }}</span>
 
           <p class="english-text">
-            {{ currentPage.content }}
+            {{ isKoreanMode ? currentPage.content_ko : currentPage.content_en }}
           </p>
           
-          </div>
+          <button class="btn-translate" @click="isKoreanMode = !isKoreanMode">
+            {{ isKoreanMode ? '🔤 English Mode' : '🇰🇷 한글로 읽기' }}
+          </button>
+        </div>
 
         <div class="action-buttons">
-          <button class="btn-icon" @click="playAudio" :disabled="isLoadingAudio">
-            <span v-if="isLoadingAudio">⏳ 생성 중...</span>
+          <button class="btn-icon" @click="playAudio" :disabled="!currentPage.audio_en">
+            <span v-if="!currentPage.audio_en">⏳ 목소리 준비 중...</span>
             <span v-else-if="isPlaying">⏹ 멈추기</span>
             <span v-else>🔊 듣기</span>
           </button>
 
-          <button 
-            v-if="pageIndex > 0" 
-            class="btn-icon nav-btn" 
-            @click="prevPage"
-          >
-            👈 이전
-          </button>
-
-          <button 
-            v-if="pageIndex < pages.length - 1" 
-            class="btn-icon nav-btn" 
-            @click="nextPage"
-          >
-            다음 👉
-          </button>
-
-          <button 
-            v-if="pageIndex === pages.length - 1" 
-            @click="goQuiz" 
-            class="btn btn-primary"
-          >
-            퀴즈 풀러 가기 🎯
-          </button>
+          <button v-if="pageIndex > 0" class="btn-icon nav-btn" @click="prevPage">👈 이전</button>
+          <button v-if="pageIndex < pages.length - 1" class="btn-icon nav-btn" @click="nextPage">다음 👉</button>
+          <button v-if="pageIndex === pages.length - 1" @click="goQuiz" class="btn btn-primary">퀴즈 풀러 가기 🎯</button>
         </div>
       </div>
     </div>
   </div>
-
   <div v-else class="loading-container">
     <p>📖 동화책을 펼치는 중이에요...</p>
   </div>
@@ -74,17 +54,16 @@ import { useCounterStore } from '@/stores/counter'
 
 const route = useRoute()
 const router = useRouter()
-const store = useCounterStore()
 
 const storyId = route.params.id
 const story = ref(null)
 const pages = ref([])
 const isLoading = ref(true)
 const pageIndex = ref(0) 
+const isKoreanMode = ref(false) // 번역 모드 상태
 
 // 오디오 관련 상태 변수 추가
 const isPlaying = ref(false)
-const isLoadingAudio = ref(false)
 let audioObj = null
 
 const currentPage = computed(() => {
@@ -92,14 +71,14 @@ const currentPage = computed(() => {
   return pages.value[pageIndex.value]
 })
 
-onMounted(async () => {
+const loadStory = async () => {
   try {
     const storyRes = await api.get(`/api/stories/${storyId}/`)
     story.value = storyRes.data
 
     const pagesRes = await api.get(`/api/stories/${storyId}/pages/`)
+    // DB의 content_ko, content_en 필드명을 확인하세요.
     pages.value = pagesRes.data.sort((a, b) => a.page_number - b.page_number)
-
   } catch (error) {
     console.error('동화 로딩 실패:', error)
     alert('동화를 불러오지 못했어요 😭')
@@ -107,7 +86,22 @@ onMounted(async () => {
   } finally {
     isLoading.value = false
   }
-})
+}
+
+onMounted(async () => {
+  await loadStory();
+  
+  // [수정] forEach 대신 for...of를 사용하여 순차적으로 처리
+  for (const [index, page] of pages.value.entries()) {
+    if (!page.audio_en) {
+      // 한 페이지 생성이 완료될 때까지 기다린 후 다음 페이지 요청
+      await fetchAudioForPage(page.id, index);
+      
+      // AI 서버의 부하를 줄이기 위해 요청 사이에 0.5초 정도의 대기 시간을 줍니다.
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+  }
+});
 
 // 페이지 넘길 때 오디오 끄기
 watch(pageIndex, () => {
@@ -122,57 +116,22 @@ const prevPage = () => {
   if (pageIndex.value > 0) pageIndex.value--
 }
 
-// [핵심] 오디오 재생/정지 통합 함수
-const playAudio = async () => {
-  // 이미 재생 중이면 멈춤
-  if (isPlaying.value) {
-    stopAudio()
-    return
-  }
+const playAudio = () => {
+  if (isPlaying.value) { stopAudio(); return }
+  if (!currentPage.value.audio_en) return
 
-  // 현재 페이지의 텍스트가 없으면 중단
-  const textToRead = currentPage.value.content
-  if (!textToRead) return
-
-  try {
-    isLoadingAudio.value = true
-    
-    // Nginx를 통해 AI 컨테이너로 요청 (/ai/generate-tts)
-    const response = await axios.post('/ai/generate-tts', {
-      text: textToRead,
-      voice_name: "Aoede" // 따뜻한 목소리
-    })
-
-    // Base64 오디오 재생
-    const base64Audio = response.data.audio_data
-    const audioSrc = `data:audio/wav;base64,${base64Audio}`
-    
-    audioObj = new Audio(audioSrc)
-    audioObj.onended = () => {
-      isPlaying.value = false
-    }
-    
-    audioObj.play()
-    isPlaying.value = true
-
-  } catch (error) {
-    console.error("TTS 요청 실패:", error)
-    alert('선생님 목소리를 불러오지 못했어요. (서버 연결 확인 필요)')
-  } finally {
-    isLoadingAudio.value = false
-  }
+  const audioSrc = `data:audio/wav;base64,${currentPage.value.audio_en}`
+  audioObj = new Audio(audioSrc)
+  audioObj.onended = () => { isPlaying.value = false }
+  audioObj.play()
+  isPlaying.value = true
 }
 
 // 오디오 정지 헬퍼 함수
 const stopAudio = () => {
-  if (audioObj) {
-    audioObj.pause()
-    audioObj.currentTime = 0
-    audioObj = null
-  }
+  if (audioObj) { audioObj.pause(); audioObj.currentTime = 0; audioObj = null }
   isPlaying.value = false
 }
-
 // 컴포넌트 나갈 때 오디오 정리
 onUnmounted(() => {
   stopAudio()
@@ -180,6 +139,35 @@ onUnmounted(() => {
 
 const goQuiz = () => {
   router.push(`/story/${storyId}/quiz`)
+}
+
+
+onMounted(async () => {
+  await loadStory();
+  
+  // [수정] forEach 대신 for...of를 사용하여 순차적으로 처리
+  // 한 페이지가 완료되어야 다음 페이지로 넘어갑니다.
+  for (let i = 0; i < pages.value.length; i++) {
+    const page = pages.value[i];
+    if (!page.audio_en) {
+      console.log(`${i + 1}페이지 음성 생성 시작...`);
+      await fetchAudioForPage(page.id, i);
+      
+      // AI 서버의 안정성을 위해 요청 사이에 1초의 간격을 둡니다.
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+  }
+});
+
+const fetchAudioForPage = async (pageId, index) => {
+  try {
+    const res = await api.post(`/api/stories/page/${pageId}/tts/`)
+    if (res.data.audio_en) {
+      pages.value[index].audio_en = res.data.audio_en
+    }
+  } catch (err) {
+    console.error(`${index + 1}페이지 오디오 생성 실패:`, err)
+  }
 }
 </script>
 
@@ -261,5 +249,17 @@ const goQuiz = () => {
   .book-card { flex-direction: row; min-height: 500px; }
   .story-image { flex: 1; height: auto; }
   .story-content { flex: 1; overflow-y: auto; }
+}
+
+.btn-translate {
+  margin-top: 15px;
+  padding: 8px 15px;
+  background: #fff;
+  border: 2px solid #FFD700;
+  border-radius: 15px;
+  cursor: pointer;
+  font-weight: bold;
+  color: #555;
+  transition: all 0.2s;
 }
 </style>
