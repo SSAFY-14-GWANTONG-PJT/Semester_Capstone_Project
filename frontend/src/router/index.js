@@ -10,8 +10,9 @@ import CommunityRoot from '@/views/community/CommunityRoot.vue'
 import TodayLearningView from '@/views/learning/TodayLearningView.vue'
 import TodayStudyView from '@/views/learning/TodayStudyView.vue'
 import MyPageView from '@/views/mypage/MyPageView.vue'
-import ProfileEditView from '@/components/ProfileEditView.vue'
-import IndividualSettingsView from '@/components/IndividualSettingsView.vue'
+import ProfileEditView from '@/components/profile/ProfileEditView.vue'
+import IndividualSettingsView from '@/components/profile/IndividualSettingsView.vue'
+import UserTotalStory from '@/views/mypage/UserTotalStory.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -89,6 +90,12 @@ const router = createRouter({
       name: 'profile-learning-settings',
       component: IndividualSettingsView
     },
+    // 전체 동화 보기
+    {
+      path: '/mypage/stories',
+      name: 'user-total-stories',
+      component: UserTotalStory
+    }
   ],
 })
 
