@@ -8,6 +8,7 @@ import LoginView from '@/views/login/LoginView.vue'
 import SignUpView from '@/views/signup/SignUpView.vue'
 import CommunityRoot from '@/views/community/CommunityRoot.vue'
 import TodayLearningView from '@/views/learning/TodayLearningView.vue'
+import TodayStudyView from '@/views/learning/TodayStudyView.vue'
 import MyPageView from '@/views/mypage/MyPageView.vue'
 import ProfileEditView from '@/components/ProfileEditView.vue'
 import IndividualSettingsView from '@/components/IndividualSettingsView.vue'
@@ -71,6 +72,11 @@ const router = createRouter({
       name: 'today-learning',
       component: TodayLearningView
     },
+    {
+      path: '/learning/today/study',
+      name: 'today-study',
+      component: TodayStudyView
+    },
     // 프로필 수정
     {
       path: '/profile/edit/',
@@ -82,7 +88,7 @@ const router = createRouter({
       path: '/profile/settings/',
       name: 'profile-learning-settings',
       component: IndividualSettingsView
-    }
+    },
   ],
 })
 

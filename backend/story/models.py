@@ -4,8 +4,7 @@ from django.conf import settings
 # Create your models here.
 class Story(models.Model):
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='stories')
-    study_set = models.IntegerField(null=True, blank=True) # 단어장 foreign key 걸어야 하지만, 생성 X기에 우선 IntegerField 로 유지
-    
+    study_set = models.ForeignKey('learning.StudySet', on_delete=models.SET_NULL, null=True, blank=True, related_name='stories')    
     title = models.CharField(max_length=200)
     summary = models.TextField(null=True, blank=True)
     genre = models.CharField(max_length=50)

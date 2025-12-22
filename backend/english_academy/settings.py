@@ -32,6 +32,7 @@ ALLOWED_HOSTS = ["*"] # 개발 환경이므로 모든 호스트 허용해야
 
 INSTALLED_APPS = [
     # 'tests', // 지금 당장은 사용하지 않으니 주석 처리
+    'learning',
     'story',
     'accounts',
     'community',
@@ -61,8 +62,8 @@ from datetime import timedelta
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),  # 보통 30분~60분
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),    # 보통 1일~7일
-    'ROTATE_REFRESH_TOKENS': True,  # 👈 True로 변경: 리프레시 토큰을 쓰면 새 리프레시 토큰도 줌
-    'BLACKLIST_AFTER_ROTATION': True, # 👈 True: 사용한 리프레시 토큰은 다신 못 쓰게 함
+    'ROTATE_REFRESH_TOKENS': True,  # True로 변경: 리프레시 토큰을 쓰면 새 리프레시 토큰도 줌
+    'BLACKLIST_AFTER_ROTATION': True, # True: 사용한 리프레시 토큰은 다신 못 쓰게 함
     'ALGORITHM': 'HS256',
     'SIGNING_KEY': SECRET_KEY,                      # 위쪽의 SECRET_KEY를 사용
     'AUTH_HEADER_TYPES': ('Bearer',),               # Vue에서 'Bearer <token>'으로 보냄
