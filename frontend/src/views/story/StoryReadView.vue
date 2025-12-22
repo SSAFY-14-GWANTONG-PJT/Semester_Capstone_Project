@@ -26,7 +26,11 @@
           </div>
 
         <div class="action-buttons">
-          <button class="btn-icon" @click="playAudio">🔊 듣기</button>
+          <button class="btn-icon" @click="playAudio" :disabled="isLoadingAudio">
+            <span v-if="isLoadingAudio">⏳ 생성 중...</span>
+            <span v-else-if="isPlaying">⏹ 멈추기</span>
+            <span v-else>🔊 듣기</span>
+          </button>
 
           <button 
             v-if="pageIndex > 0" 
@@ -62,9 +66,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue' // watch, onUnmounted 추가
 import { useRoute, useRouter } from 'vue-router'
-import axios from '@/api/index.js'
+import axios from 'axios' // 일반 axios 사용 (Nginx /ai 경로 호출 위해)
+import api from '@/api/index.js' // 기존 백엔드 호출용
 import { useCounterStore } from '@/stores/counter'
 
 const route = useRoute()
@@ -75,9 +80,13 @@ const storyId = route.params.id
 const story = ref(null)
 const pages = ref([])
 const isLoading = ref(true)
-const pageIndex = ref(0) // 현재 보고 있는 페이지 인덱스 (0부터 시작)
+const pageIndex = ref(0) 
 
-// 현재 페이지 데이터 계산
+// 오디오 관련 상태 변수 추가
+const isPlaying = ref(false)
+const isLoadingAudio = ref(false)
+let audioObj = null
+
 const currentPage = computed(() => {
   if (pages.value.length === 0) return {}
   return pages.value[pageIndex.value]
@@ -85,17 +94,10 @@ const currentPage = computed(() => {
 
 onMounted(async () => {
   try {
-    // 동화 기본 정보 가져오기
-    const storyRes = await axios.get(`/api/stories/${storyId}/`, {
-      headers: { Authorization: `Token ${store.token}` }
-    })
+    const storyRes = await api.get(`/api/stories/${storyId}/`)
     story.value = storyRes.data
 
-    // 동화 페이지들 가져오기
-    const pagesRes = await axios.get(`/api/stories/${storyId}/pages/`, {
-      headers: { Authorization: `Token ${store.token}` }
-    })
-    // 페이지 번호 순서대로 정렬
+    const pagesRes = await api.get(`/api/stories/${storyId}/pages/`)
     pages.value = pagesRes.data.sort((a, b) => a.page_number - b.page_number)
 
   } catch (error) {
@@ -107,6 +109,11 @@ onMounted(async () => {
   }
 })
 
+// 페이지 넘길 때 오디오 끄기
+watch(pageIndex, () => {
+  stopAudio()
+})
+
 // 페이지 이동 함수
 const nextPage = () => {
   if (pageIndex.value < pages.value.length - 1) pageIndex.value++
@@ -115,9 +122,61 @@ const prevPage = () => {
   if (pageIndex.value > 0) pageIndex.value--
 }
 
-const playAudio = () => {
-  alert('원어민 선생님 목소리는 준비 중이에요! 🎧')
+// [핵심] 오디오 재생/정지 통합 함수
+const playAudio = async () => {
+  // 이미 재생 중이면 멈춤
+  if (isPlaying.value) {
+    stopAudio()
+    return
+  }
+
+  // 현재 페이지의 텍스트가 없으면 중단
+  const textToRead = currentPage.value.content
+  if (!textToRead) return
+
+  try {
+    isLoadingAudio.value = true
+    
+    // Nginx를 통해 AI 컨테이너로 요청 (/ai/generate-tts)
+    const response = await axios.post('/ai/generate-tts', {
+      text: textToRead,
+      voice_name: "Aoede" // 따뜻한 목소리
+    })
+
+    // Base64 오디오 재생
+    const base64Audio = response.data.audio_data
+    const audioSrc = `data:audio/wav;base64,${base64Audio}`
+    
+    audioObj = new Audio(audioSrc)
+    audioObj.onended = () => {
+      isPlaying.value = false
+    }
+    
+    audioObj.play()
+    isPlaying.value = true
+
+  } catch (error) {
+    console.error("TTS 요청 실패:", error)
+    alert('선생님 목소리를 불러오지 못했어요. (서버 연결 확인 필요)')
+  } finally {
+    isLoadingAudio.value = false
+  }
 }
+
+// 오디오 정지 헬퍼 함수
+const stopAudio = () => {
+  if (audioObj) {
+    audioObj.pause()
+    audioObj.currentTime = 0
+    audioObj = null
+  }
+  isPlaying.value = false
+}
+
+// 컴포넌트 나갈 때 오디오 정리
+onUnmounted(() => {
+  stopAudio()
+})
 
 const goQuiz = () => {
   router.push(`/story/${storyId}/quiz`)
@@ -147,7 +206,7 @@ const goQuiz = () => {
 .real-image {
   width: 100%;
   height: 100%;
-  object-fit: contain; /* 이미지가 꽉 차게 */
+  object-fit: contain;
   transition: transform 0.5s ease;
 }
 .real-image:hover { transform: scale(1.05); }
@@ -198,7 +257,6 @@ const goQuiz = () => {
 }
 .btn-primary:hover { transform: translateY(-3px); background-color: #FA5252; }
 
-/* 반응형: PC 화면일 때 가로 배치 */
 @media (min-width: 768px) {
   .book-card { flex-direction: row; min-height: 500px; }
   .story-image { flex: 1; height: auto; }

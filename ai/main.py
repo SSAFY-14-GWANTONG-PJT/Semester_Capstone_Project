@@ -16,6 +16,9 @@ from google import genai
 from google.genai import types
 from PIL import Image
 
+# 동화 읽어주는 헤더
+import wave
+
 # 리스트 타입 사용 위해
 from typing import List, Optional
 
@@ -84,7 +87,8 @@ story_prompt_template = PromptTemplate.from_template(
     [Structure Requirements]
     1. The story MUST be divided into **4 to 6 distinct paragraphs**.
     2. Each paragraph will be one page of the book.
-    3. **Output Format:** You MUST return a **Single JSON Object**. Do not include any other text.
+    3. Even if input comes in Korean, all story content MUST be in **English**.
+    4. **Output Format:** You MUST return a **Single JSON Object**. Do not include any other text.
        
        JSON Structure Example:
        {{
@@ -446,3 +450,68 @@ async def preview_single_image(page_no: int):
     
     image_bytes = base64.b64decode(page['image_data'])
     return Response(content=image_bytes, media_type="image/png")
+
+
+# TTS
+class TTSRequest(BaseModel):
+    text: str = Field(description="음성으로 변환할 텍스트")
+    voice_name: str = Field(default="Aoede", description="사용할 목소리 (Puck, Aoede, Kore 등)")
+
+@app.post("/generate-tts")
+async def generate_tts(req: TTSRequest):
+    """
+    텍스트를 입력받아 Gemini TTS 모델을 통해 음성(Base64 wav)을 반환합니다.
+    """
+    try:
+        print(f"TTS 생성 요청: {req.text[:30]}... (Voice: {req.voice_name})")
+        
+        # 프롬프트 구성 (감독 지시사항 포함)
+        prompt = f"""
+        # ROLE: A warm and engaging storyteller for children.
+        # DIRECTOR'S NOTES:
+        - Read the following story clearly and slowly.
+        - Use a gentle, encouraging tone ("Vocal Smile").
+        - Emphasize key words for language learners.
+        
+        # SCRIPT:
+        {req.text}
+        """
+
+        response = client.models.generate_content(
+            model="gemini-2.5-flash-preview-tts",
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_modalities=["AUDIO"],
+                speech_config=types.SpeechConfig(
+                    voice_config=types.VoiceConfig(
+                        prebuilt_voice_config=types.PrebuiltVoiceConfig(
+                            voice_name=req.voice_name,
+                        )
+                    )
+                ),
+            )
+        )
+
+        # 바이너리 오디오 데이터 추출 (Raw PCM)
+        audio_bytes = response.candidates[0].content.parts[0].inline_data.data
+        
+        # [수정됨] Raw PCM 데이터를 WAV 포맷으로 변환 (헤더 추가)
+        # Gemini TTS 기본 사양: Sample Rate 24kHz, 1 Channel (Mono), 16-bit
+        with io.BytesIO() as wav_buffer:
+            with wave.open(wav_buffer, "wb") as wf:
+                wf.setnchannels(1)       # Mono
+                wf.setsampwidth(2)       # 16-bit = 2 bytes
+                wf.setframerate(24000)   # 24kHz
+                wf.writeframes(audio_bytes)
+            
+            # 헤더가 포함된 WAV 데이터 가져오기
+            wav_data = wav_buffer.getvalue()
+        
+        # Base64로 인코딩하여 반환
+        audio_base64 = base64.b64encode(wav_data).decode('utf-8')
+        
+        return {"audio_data": audio_base64}
+
+    except Exception as e:
+        print(f"TTS 생성 실패: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
