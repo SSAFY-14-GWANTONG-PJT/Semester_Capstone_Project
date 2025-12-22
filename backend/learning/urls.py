@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
-from rest_framework_simplejwt.views import TokenBlacklistView,TokenRefreshView
 
 urlpatterns = [
-] 
+    # 프론트엔드에서 /api/learning/today/ 로 요청하게 됩니다.
+    path('today/', views.TodayLearningView.as_view(), name='today_learning'),
+]

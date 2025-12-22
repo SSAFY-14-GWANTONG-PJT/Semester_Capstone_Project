@@ -62,7 +62,7 @@ const goTo = (type) => {
   switch(type) {
     case 'words':
       alert('오늘의 단어 학습 페이지로 이동합니다! (준비 중)')
-      // router.push('/learning/words') 
+      router.push({ name: 'today-study' })
       break
     case 'interpretation':
       alert('문장 해석 퀴즈 페이지로 이동합니다! (준비 중)')
