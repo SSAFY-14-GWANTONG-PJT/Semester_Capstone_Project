@@ -1,6 +1,6 @@
 # JWT 기반의 로그인
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializers import MyTokenObtainPairSerializer
+from .serializers import MyTokenObtainPairSerializer, UserStorySerializer, UserStoryAllSeializer
 
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
@@ -83,3 +83,22 @@ def profileEdit(request):
         serializer.save()
         return Response({"message": "프로필이 성공적으로 업데이트되었습니다."}, status=200)
     return Response(serializer.errors, status=400)
+
+
+# 내가 쓴 스토리 가져오기
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def getStory(request):
+    user = request.user
+    stories = user.stories.all()
+    serializer = UserStorySerializer(stories, many=True)
+    return Response(serializer.data, status=200)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def getAllStories(request):
+    user = request.user
+    stories = user.stories.all()
+    serializer = UserStoryAllSeializer(stories, many=True)
+    return Response(serializer.data, status=200)

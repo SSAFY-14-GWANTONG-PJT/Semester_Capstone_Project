@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import UserTracker
+from story.models import Story
 
 # JWT를 이용한 로그인 구현 간, username이 아닌 email을 적용하기 위한 커스터 마이징
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -60,3 +61,14 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['nickname', 'email']
+
+
+class UserStorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Story
+        fields = ['id', 'author', 'title', 'created_at']
+
+class UserStoryAllSeializer(serializers.ModelSerializer):
+    class Meta:
+        model = Story
+        fields = '__all__'

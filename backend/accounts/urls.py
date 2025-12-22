@@ -10,4 +10,6 @@ urlpatterns = [
     path('accountDeactive/', views.accountDeactive),
     path('profile/',views.profile),
     path('profile/edit/', views.profileEdit),
+    path('profile/story/',views.getStory),
+    path('profile/stories/',views.getAllStories)
 ]

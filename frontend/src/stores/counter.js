@@ -5,7 +5,7 @@ export const useCounterStore = defineStore('counter', () => {
   const token = ref(null)
   const refreshToken = ref(null)
   const nickname = ref('')
-
+  const experience = ref(0)
   const isLoggedIn = computed(() => !!token.value)
 
   function login(newToken, newRefreshToken , newNickname) {
@@ -54,6 +54,7 @@ export const useCounterStore = defineStore('counter', () => {
   return { 
     isLoggedIn,
     nickname,
+    experience,
     login,
     logout,
     token,
