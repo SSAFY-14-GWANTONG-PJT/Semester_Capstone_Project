@@ -12,11 +12,11 @@
         <div class="quick-stats">
           <div class="stat-box">
             <span class="label">읽은 동화</span>
-            <span class="value">12<span>권</span></span>
+            <span class="value">{{ stories.length }}<span>권</span></span>
           </div>
           <div class="stat-box">
             <span class="label">성장 포인트</span>
-            <span class="value">1,250<span>P</span></span>
+            <span class="value">{{ store.experience }}<span>P</span></span>
           </div>
         </div>
       </div>
@@ -43,24 +43,12 @@
 
       <div class="dash-card stories-card">
         <div class="card-header">
-          <h3>📚 최근 읽은 동화</h3>
-          <button>전체보기</button>
+          <h3>📚 내가 쓴 동화</h3>
+          <RouterLink :to="{name: 'user-total-stories'}">전체보기</RouterLink>
         </div>
         <div class="story-list">
-          <div class="story-item">
-            <span class="emoji">🦁</span>
-            <div class="story-info">
-              <p class="title">The Brave Lion</p>
-              <p class="date">2025.12.18</p>
-            </div>
-          </div>
-          <div class="story-item">
-            <span class="emoji">🚀</span>
-            <div class="story-info">
-              <p class="title">Space Adventure</p>
-              <p class="date">2025.12.16</p>
-            </div>
-          </div>
+          <MyPageStoryView v-for="story in latestStories" :key="story.id" :story="story" />
+          <p v-if="latestStories.length === 0" class="empty-msg">아직 작성한 동화가 없어요! ✍️</p>
         </div>
       </div>
 
@@ -103,8 +91,9 @@
 import { storeToRefs } from 'pinia';
 import { useCounterStore } from '@/stores/counter';
 import { RouterLink, RouterView, useRouter } from 'vue-router'
-import {ref, onMounted} from 'vue'
+import {ref, onMounted, computed} from 'vue'
 import axios from '@/api/index.js'
+import MyPageStoryView from '@/components/profile/MyPageStoryView.vue';
 
 const router = useRouter()
 const store = useCounterStore();
@@ -155,6 +144,26 @@ onMounted(async () => {
 })
 
 // 회원탈퇴 --------------------------------------------------
+
+// 동화 리스트 가져오기
+const stories = ref([])
+onMounted(async () => {
+  try {
+    const response = await axios.get('/api/accounts/profile/story/')
+    stories.value = response.data
+  } catch (error) {
+    console.error("동화 리스트 가져오기 실패:", error)
+  }
+})
+
+const latestStories = computed(() => {
+  const sorted = [...stories.value].sort((a, b) => {
+    return new Date(b.created_at) - new Date(a.created_at)
+  })
+
+  return sorted.slice(0, 5)
+})
+// 동화 리스트 가져오기
 </script>
 
 <style scoped>
@@ -281,17 +290,6 @@ onMounted(async () => {
 
 /* 최근 동화 리스트 */
 .story-list { display: flex; flex-direction: column; gap: 15px; }
-.story-item {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  padding: 15px;
-  background: #f9fafb;
-  border-radius: 20px;
-}
-.story-item .emoji { font-size: 1.5rem; }
-.story-item .title { font-weight: 800; color: var(--text); margin: 0; }
-.story-item .date { font-size: 0.85rem; color: #999; margin: 0; }
 
 /* 메뉴 카드 */
 .menu-card { grid-column: 2; grid-row: 1 / 3; }
