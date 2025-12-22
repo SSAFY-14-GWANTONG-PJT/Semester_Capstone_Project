@@ -6,7 +6,7 @@ from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnl
 from rest_framework.response import Response
 from rest_framework import status
 
-from .models import Post, Comment, LikePost, LikeComment
+from .models import Post, Comment, LikeComment
 from .serializers import PostSerializer, CommentSerializer
 
 @api_view(['GET', 'POST'])
@@ -81,35 +81,36 @@ def post_detail(request, post_id):
         post.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def post_like_toggle(request, post_id):
-    post = get_object_or_404(Post, pk=post_id)
+# LikePost 모델이 아직 없어 migrations 시 에러가 발생하기에, 주석처리 합니다
+# @api_view(['POST'])
+# @permission_classes([IsAuthenticated])
+# def post_like_toggle(request, post_id):
+#     post = get_object_or_404(Post, pk=post_id)
 
-    like_obj, created = LikePost.objects.get_or_create(
-        user=request.user,
-        post=post,
-    )
+#     like_obj, created = LikePost.objects.get_or_create(
+#         user=request.user,
+#         post=post,
+#     )
 
-    if not created:
-        # 좋아요 -> 취소
-        like_obj.delete()
-        liked = False
-    else:
-        liked = True
+#     if not created:
+#         # 좋아요 -> 취소
+#         like_obj.delete()
+#         liked = False
+#     else:
+#         liked = True
 
-    # Post.like 카운트 필드 동기화
-    if hasattr(post, 'like'):
-        post.like = LikePost.objects.filter(post=post).count()
-        post.save(update_fields=['like'])
+#     # Post.like 카운트 필드 동기화
+#     if hasattr(post, 'like'):
+#         post.like = LikePost.objects.filter(post=post).count()
+#         post.save(update_fields=['like'])
 
-    return Response(
-        {
-            'liked': liked,
-            'like_count': getattr(post, 'like', None),
-        },
-        status=status.HTTP_200_OK
-    )
+#     return Response(
+#         {
+#             'liked': liked,
+#             'like_count': getattr(post, 'like', None),
+#         },
+#         status=status.HTTP_200_OK
+#     )
 
 # 댓글목록 작성 수정 중
 @api_view(['GET', 'POST']) # get: 목록 , post : 작성(user=request.user)
