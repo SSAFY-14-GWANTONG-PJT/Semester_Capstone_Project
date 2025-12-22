@@ -54,3 +54,9 @@ class SignUpSerializer(serializers.ModelSerializer):
             level = level_data
         )
         return user
+    
+class ProfileUpdateSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = User
+        fields = ['nickname', 'email']

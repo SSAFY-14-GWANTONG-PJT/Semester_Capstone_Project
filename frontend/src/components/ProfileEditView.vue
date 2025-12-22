@@ -20,12 +20,20 @@
             <span class="current-emoji">✨</span>
             <div class="edit-badge">📸</div>
           </div>
-          <p class="email-info">{{ editForm.email }}</p>
+          <p class="email-info">현재 모험가 계정 정보</p>
         </div>
 
         <form @submit.prevent="updateProfileHandler">
           <div class="form-grid">
-            <div class="form-group">
+            <div class="form-group full-width">
+              <label for="email">이메일 주소</label>
+              <div class="input-wrapper">
+                <input type="email" id="email" v-model="editForm.email" placeholder="이메일을 입력하세요">
+                <i class="fas fa-envelope input-icon"></i>
+              </div>
+            </div>
+
+            <div class="form-group full-width">
               <label for="nickname">새로운 닉네임</label>
               <div class="input-wrapper">
                 <input type="text" id="nickname" v-model="editForm.nickname" placeholder="닉네임을 입력하세요">
@@ -34,19 +42,19 @@
             </div>
 
             <div class="form-group">
-              <label for="age">아이 나이</label>
+              <label for="age">아이 나이 (수정 불가)</label>
               <div class="input-wrapper">
-                <select id="age" v-model="editForm.age">
+                <select id="age" v-model="editForm.age" disabled class="disabled-input">
                   <option v-for="n in 8" :key="n" :value="n + 2">{{ n + 2 }}세</option>
                 </select>
                 <i class="fas fa-birthday-cake input-icon"></i>
               </div>
             </div>
 
-            <div class="form-group full-width">
-              <label for="level">현재 학습 레벨</label>
+            <div class="form-group">
+              <label for="level">학습 레벨 (수정 불가)</label>
               <div class="input-wrapper">
-                <select id="level" v-model="editForm.level">
+                <select id="level" v-model="editForm.level" disabled class="disabled-input">
                   <option v-for="l in 10" :key="l" :value="l">Lv.{{ l }}</option>
                 </select>
                 <i class="fas fa-layer-group input-icon"></i>
@@ -56,7 +64,7 @@
 
           <div class="btn-group">
             <button type="button" class="btn btn-secondary" @click="router.back()">취소</button>
-            <button type="submit" class="btn btn-primary">변경사항 저장 💾</button>
+            <button type="submit" class="btn btn-primary edit">변경사항 저장 💾</button>
           </div>
         </form>
       </div>
@@ -76,8 +84,8 @@ const store = useCounterStore()
 const editForm = reactive({
   nickname: '',
   email: '',
-  age: 0,
-  level: 0
+  age: null,
+  level: 0,
 })
 
 // 1. 기존 프로필 정보 가져오기
@@ -99,25 +107,18 @@ onMounted(async () => {
 })
 
 // 2. 프로필 수정 요청 (PUT 또는 PATCH)
-// const updateProfileHandler = async () => {
-//   if (!editForm.nickname) return alert("닉네임을 입력해주세요!")
-  
-//   try {
-//     // [수정] 여기도 마찬가지로 헤더 없이 깔끔하게 호출합니다.
-//     await axios.patch('/api/accounts/profile/update/', {
-//       nickname: editForm.nickname,
-//       age: editForm.age,
-//       level: editForm.level
-//     })
+const updateProfileHandler = async () => {
+  console.log("수정 요청 데이터:")
+  try {
+    await axios.patch('/api/accounts/profile/edit/', editForm)
     
-//     store.nickname = editForm.nickname
-//     alert("정보가 성공적으로 수정되었습니다! ✨")
-//     router.push({ name: 'mypage' })
-//   } catch (err) {
-//     console.error("수정 실패:", err)
-//     alert("정보 수정에 실패했습니다.")
-//   }
-// }
+    store.nickname = editForm.nickname // Pinia 상태 업데이트
+    alert("성공적으로 수정되었습니다! ✨")
+    router.push({ name: 'mypage' })
+  } catch (err) {
+    alert("수정에 실패했습니다.\nemail 또는 nickname이 중복되었을 수 있습니다.")
+  }
+}
 </script>
 
 <style scoped>
@@ -210,10 +211,39 @@ input:focus, select:focus { border-color: #CE82FF; box-shadow: 0 5px 15px rgba(2
 .btn-secondary {
   background: #F0F0F0; color: #888; box-shadow: 0 6px 0 #CCC;
 }
-.btn-secondary:active { transform: translateY(3px); box-shadow: 0 3px 0 #CCC; }
+.btn-secondary:hover {
+  /* 1. 위로 살짝 뜨면서 전체적으로 1.02배 커지는 효과 */
+  transform: translateY(-3px) scale(1.02);
+  
+  /* 2. 호버 시 배경색을 기존(#F0F0F0)보다 약간 더 진한 회색으로 변경하여 피드백 강화 */
+  background-color: #E8E8E8;
+  
+  /* 3. 버튼이 떠오른 만큼 입체 그림자 깊이를 9px로 늘리고, 바닥에 부드러운 그림자 추가 */
+  box-shadow: 0 9px 0 #CCC, 0 15px 30px rgba(0, 0, 0, 0.1);
+  
+  /* 부드러운 전환 효과 */
+  transition: all 0.2s ease;
+}
 
 @media (max-width: 600px) {
   .form-grid { grid-template-columns: 1fr; }
   .full-width { grid-column: span 1; }
+}
+
+.btn-primary:hover {
+  /* 1. 크기 확장과 위로 뜨는 효과를 동시에 적용 */
+  transform: translateY(-3px) scale(1.02);
+  
+  /* 2. 기존(#FF6B9D, #CE82FF)보다 더 진하고 선명한 그라데이션 */
+  background: linear-gradient(135deg, #E65586, #B366EB); 
+  
+  /* 3. 버튼색이 진해짐에 따라 그림자 색상도 더 깊게 조정 */
+  box-shadow: 0 9px 0 #8A4EBD, 0 15px 30px rgba(179, 102, 235, 0.4);
+  
+  /* 4. 텍스트는 흰색을 유지하여 가독성 확보 */
+  color: white;
+  
+  transition: all 0.2s ease;
+  cursor: pointer;
 }
 </style>

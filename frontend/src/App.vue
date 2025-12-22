@@ -2,11 +2,18 @@
 import { RouterLink, RouterView, useRouter } from 'vue-router'
 import { useCounterStore } from '@/stores/counter'
 import { storeToRefs } from 'pinia'
+import { onMounted } from 'vue'
 import axios from '@/api/index.js'
+
+const store = useCounterStore()
+
+onMounted(() => {
+  // 앱 시작 시 저장된 다크모드 상태를 실제 DOM에 반영
+  store.applyTheme()
+})
 
 // 로직 추가: 스토어에서 상태 가져오기
 const router = useRouter()
-const store = useCounterStore()
 const { isLoggedIn, nickname, refreshToken } = storeToRefs(store)
 
 // 로그아웃 핸들러 추가
@@ -126,6 +133,7 @@ header {
   align-items: center;
   gap: 10px;
   color: var(--text);
+  text-decoration: none;
 }
 
 .logo:hover {
