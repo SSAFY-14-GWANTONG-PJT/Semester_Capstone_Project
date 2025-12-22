@@ -1,0 +1,295 @@
+/* src/assets/base.css */
+
+/* 1. 전역 테마 변수 정의 */
+:root {
+  --bg-main: linear-gradient(180deg, #FFF9E5 0%, #FFFFFF 100%);
+  --bg-box: #FFFFFF;
+  --text-main: #3C3C3C;
+  --text-sub: #777;
+  --border-color: #1CB0F6;
+  --header-bg: rgba(255, 255, 255, 0.95);
+  --item-bg: #F7F7F7;
+}
+
+/* 2. 다크 모드 변수 설정 (강력한 !important로 기반 마련) */
+:root.dark-theme {
+  --bg-main: #1A1A1B !important;
+  --bg-box: #2D2D2E !important;
+  --text-main: #F5F5F5 !important;
+  --text-sub: #AAAAAA !important;
+  --border-color: #58CC02 !important;
+  --header-bg: #1A1A1B !important;
+  --item-bg: #3D3D3F !important;
+}
+
+/* 3. [전체 배경 저격] 모든 페이지 컨테이너의 그라데이션 강제 삭제 */
+.dark-theme,
+.dark-theme body,
+.dark-theme .global-zoom-container,
+/* 모든 페이지 루트 컨테이너 (-container로 끝나는 클래스들) */
+.dark-theme div[class$="-container"] {
+  background: var(--bg-main) !important;
+  background-image: none !important;
+  color: var(--text-main) !important;
+}
+
+/* 4. 📸 [사진 및 캐릭터 정밀 저격] - 이 부분이 핵심입니다 */
+/* 이미지와 이미지를 감싸는 흰색 원형/박스 배경을 모두 잡습니다. */
+.dark-theme img,
+.dark-theme .hero-characters-img,
+/* 홈화면 캐릭터 */
+.dark-theme .mascot-face-img,
+/* 마스코트 로봇 */
+.dark-theme .user-avatar-mini,
+/* 상단바 아바타 */
+.dark-theme .avatar-circle,
+/* 수정페이지 아바타 */
+.dark-theme .logo-icon {
+  filter: brightness(0.8) contrast(1.1) !important;
+  /* 이미지 자체를 차분하게 */
+  background-color: var(--bg-box) !important;
+  /* 이미지 뒤 흰색 배경 박멸 */
+  border-color: var(--border-color) !important;
+}
+
+/* 아바타 원형 컨테이너 등 이모지가 들어가는 곳 */
+.dark-theme .avatar-circle,
+.dark-theme .user-avatar-mini {
+  background: var(--bg-box) !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* 5. [상단바 대응] App.vue 헤더 완벽 박멸 */
+.dark-theme header {
+  background: var(--header-bg) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  /* 아주 연한 경계선만 추가 */
+}
+
+.dark-theme .nav-wrapper {
+  background: transparent !important;
+}
+
+/* 상단바 내부 모든 글자 */
+.dark-theme .logo span,
+.dark-theme .menu-items a,
+.dark-theme .user-nickname-nav strong,
+.dark-theme .nav-sub-btn,
+.dark-theme .nav-btn-logout {
+  color: var(--text-main) !important;
+}
+
+/* 상단바 로그인/회원가입 캡슐 */
+.dark-theme .guest-nav-capsule {
+  background: #3D3D3F !important;
+}
+
+.dark-theme .nav-btn-login {
+  background: #4A4A4C !important;
+  color: white !important;
+}
+
+/* 6. [박스 및 카드 저격] HomeView의 Step 카드, Settings 박스 등 */
+.dark-theme .settings-box,
+.dark-theme .edit-box,
+.dark-theme .setting-item,
+.dark-theme .card,
+.dark-theme .step-content,
+/* HomeView의 단계별 카드 */
+.dark-theme .path-container .step-content {
+  background: var(--bg-box) !important;
+  background-color: var(--bg-box) !important;
+  color: var(--text-main) !important;
+  border-color: var(--border-color) !important;
+}
+
+/* 7. [텍스트 공통] 모든 헤딩과 문구 */
+.dark-theme h1,
+.dark-theme h2,
+.dark-theme h3,
+.dark-theme h4,
+.dark-theme p,
+.dark-theme span,
+.dark-theme strong,
+.dark-theme label {
+  color: var(--text-main) !important;
+}
+
+/* 8. [폼 요소] 입력창과 선택창 */
+.dark-theme input,
+.dark-theme select,
+.dark-theme textarea {
+  background-color: var(--item-bg) !important;
+  color: var(--text-main) !important;
+  border-color: var(--border-color) !important;
+}
+
+/* 9. [기타 배경 요소] 둥둥 떠다니는 장식들 */
+.dark-theme .shape,
+.dark-theme .floating-icon,
+.dark-theme .floating-shapes .shape {
+  opacity: 0.2 !important;
+  /* 너무 튀지 않게 투명도 조절 */
+  filter: invert(0.1);
+  /* 색상 살짝 반전으로 대비 조절 */
+}
+
+/* 로고 밑줄 제거 유지 */
+.logo {
+  text-decoration: none !important;
+}
+
+/* 10. [하단 섹션 박스들] */
+.dark-theme .stats-section,
+.dark-theme .ranking-section,
+.dark-theme .achievement-section {
+  background: var(--bg-box) !important;
+}
+
+/* 11. [모든 카드형 요소들 - border-radius가 있는 요소들] */
+.dark-theme [style*="border-radius"],
+.dark-theme div[class*="card"],
+.dark-theme div[class*="box"],
+.dark-theme div[class*="container"]:not(.global-zoom-container) {
+  background: var(--bg-box) !important;
+}
+
+/* 12. [테두리 - 구분 필요한 곳만 적용] */
+.dark-theme .setting-item,
+.dark-theme .edit-box {
+  border: 1px solid rgba(88, 204, 2, 0.2) !important;
+}
+
+/* 13. [계정 관리 버튼들 - 흰색 배경 강제 변경] */
+.dark-theme button[style*="background"],
+.dark-theme a[style*="background"],
+.dark-theme .menu-item,
+.dark-theme .nav-item {
+  background: var(--bg-box) !important;
+  background-color: var(--bg-box) !important;
+  color: var(--text-main) !important;
+}
+
+/* 14. [모든 버튼과 링크형 요소] */
+.dark-theme button:not([class*="primary"]):not([class*="btn-login"]),
+.dark-theme a[class*="item"],
+.dark-theme div[class*="item"]:not([class*="menu"]) {
+  background: var(--bg-box) !important;
+  color: var(--text-main) !important;
+}
+
+/* 15. [라운드 버튼들 특별 처리] */
+.dark-theme [style*="border-radius: 20px"],
+.dark-theme [style*="border-radius: 24px"],
+.dark-theme [style*="border-radius:20px"],
+.dark-theme [style*="border-radius:24px"] {
+  background: var(--bg-box) !important;
+  background-color: var(--bg-box) !important;
+}
+
+/* 16. [화살표 아이콘 색상] */
+.dark-theme svg,
+.dark-theme path {
+  fill: var(--text-main) !important;
+  stroke: var(--text-main) !important;
+}
+
+/* 17. [Step 카드 강제 변경 - 모든 가능한 선택자] */
+.dark-theme div[class*="step-"],
+.dark-theme div[class*="Step"],
+.dark-theme div[id*="step"],
+.dark-theme div[id*="Step"],
+.dark-theme .step-card,
+.dark-theme .step-container,
+.dark-theme .step-box,
+.dark-theme .step-content,
+.dark-theme .step-row>div {
+  background: var(--bg-box) !important;
+  background-color: var(--bg-box) !important;
+}
+
+/* 18. [Step 내부의 모든 요소들] */
+.dark-theme div[class*="step-"] *,
+.dark-theme div[class*="Step"] *,
+.dark-theme .step-content * {
+  color: var(--text-main) !important;
+}
+
+/* 18-1. [HomeView 특정 클래스 강제 타겟팅] */
+.dark-theme .home-container .step-content,
+.dark-theme .cycle-section .step-content,
+.dark-theme .path-container .step-content {
+  background: var(--bg-box) !important;
+  background-color: var(--bg-box) !important;
+  border-color: rgba(88, 204, 2, 0.3) !important;
+}
+
+/* 18-2. [data-v 속성이 있는 scoped 요소도 강제 적용] */
+.dark-theme [data-v-] .step-content,
+.dark-theme div[class="step-content"],
+.dark-theme .step-row>div:last-child {
+  background: var(--bg-box) !important;
+  background-color: var(--bg-box) !important;
+}
+
+/* 18-3. [모든 흰색/밝은 배경 박스 초강력 타겟팅] */
+.dark-theme div[style*="background: white"],
+.dark-theme div[style*="background:white"],
+.dark-theme div[style*="background: #fff"],
+.dark-theme div[style*="background:#fff"],
+.dark-theme div[style*="background: rgb(255"],
+.dark-theme *:not(.progress-bar):not([class*="badge"]) {
+  background-color: transparent !important;
+}
+
+/* 18-4. [카드/콘텐츠 박스만 배경 적용] */
+.dark-theme div[class*="content"],
+.dark-theme div[class*="card"]:not([class*="icon"]),
+.dark-theme div[class*="box"]:not([class*="zoom"]) {
+  background: var(--bg-box) !important;
+}
+
+/* 19. [특정 밝은 배경색들 강제 변경] */
+.dark-theme [style*="background-color: #E8F5FF"],
+.dark-theme [style*="background-color: #e8f5ff"],
+.dark-theme [style*="background-color: rgb(232, 245, 255)"],
+.dark-theme [style*="background: linear-gradient"] {
+  background: var(--bg-box) !important;
+  background-color: var(--bg-box) !important;
+  background-image: none !important;
+}
+
+/* 로고 밑줄 제거 유지 */
+.logo {
+  text-decoration: none !important;
+}
+
+/* 20. [HomeView 및 주요 섹션 배경 강제] */
+.dark-theme .cycle-section,
+.dark-theme .features,
+.dark-theme .team-section,
+.dark-theme .hero,
+.dark-theme footer {
+  background: var(--bg-main) !important;
+  background-image: none !important;
+}
+
+.dark-theme .tech-section {
+  background: var(--bg-box) !important;
+  background-image: none !important;
+}
+
+/* 21. [모든 섹션 요소 안전장치] */
+.dark-theme section {
+  background-color: transparent;
+  /* 기본적으로 투명하게 해서 상위 컨테이너 색상 따르도록 */
+}
+
+/* 배경색이 지정된 섹션은 강제로 덮어쓰기 */
+.dark-theme section[class*="section"],
+.dark-theme section[id] {
+  background-color: var(--bg-main) !important;
+  background-image: none !important;
+}

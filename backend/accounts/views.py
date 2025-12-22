@@ -10,7 +10,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import SignUpSerializer
+from .serializers import SignUpSerializer, ProfileUpdateSerializer
 
 from .models import UserTracker
 from django.contrib.auth import get_user_model
@@ -69,5 +69,17 @@ def profile(request):
         level = 1 
     
     return Response({
-        "level": level, 
+        "level": level,
+        "nickname": user.nickname,
+        "email": user.email,
+        'age': user.age,
     })
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def profileEdit(request):
+    serializer = ProfileUpdateSerializer(instance=request.user, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return Response({"message": "프로필이 성공적으로 업데이트되었습니다."}, status=200)
+    return Response(serializer.errors, status=400)

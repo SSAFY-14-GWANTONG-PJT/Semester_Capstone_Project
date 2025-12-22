@@ -26,7 +26,7 @@
       <div class="dash-card progress-card">
         <div class="card-header">
           <h3>🚀 현재 학습 레벨</h3>
-          <span class="level-badge">LEVEL {{ level }}</span>
+          <span class="level-badge">LEVEL {{ userInfo.level }}</span>
         </div>
         <div class="progress-container">
           <div class="progress-labels">
@@ -36,7 +36,7 @@
           <div class="main-progress-bar">
             <div class="fill" style="width: 75%;"></div>
           </div>
-          <p v-if="level < 10" class="progress-tip">5권만 더 읽으면 <strong>LEVEL {{ level + 1 }}</strong>가 될 수 있어요! 🔥</p>
+          <p v-if="userInfo.level < 10" class="progress-tip">5권만 더 읽으면 <strong>LEVEL {{ userInfo.level + 1 }}</strong>가 될 수 있어요! 🔥</p>
           <p v-else class="progress-tip">최고 레벨이에요! 대단해요!</p>
         </div>
       </div>
@@ -67,7 +67,7 @@
       <div class="dash-card menu-card">
         <h3>🛠️ 계정 관리</h3>
         <div class="menu-list">
-          <RouterLink :to="{name: 'profile-edit'}" class="menu-item">
+          <RouterLink :to="{name: 'profile-edit'}" class="menu-item" :userInfo="userInfo">
             <span>👤 프로필 수정</span>
             <i class="fas fa-chevron-right"></i>
           </RouterLink>
@@ -110,7 +110,12 @@ const router = useRouter()
 const store = useCounterStore();
 const { nickname } = storeToRefs(store);
 
-const level = ref(0)
+const userInfo = ref({
+  nickname: '',
+  email: '',
+  age: null,
+  level: 0,
+})
 
 // 회원탈퇴 --------------------------------------------------
 const showModal = ref(false)
@@ -140,8 +145,10 @@ onMounted(async () => {
     const response = await axios.get(
       '/api/accounts/profile/'
     )
-
-    level.value = response.data.level
+    userInfo.value.level = response.data.level
+    userInfo.value.nickname = response.data.nickname
+    userInfo.value.email = response.data.email
+    userInfo.value.age = response.data.age
   } catch (error) {
     console.error("프로필 가져오기 실패:", error)
   }
