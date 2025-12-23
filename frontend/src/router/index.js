@@ -8,11 +8,13 @@ import LoginView from '@/views/login/LoginView.vue'
 import SignUpView from '@/views/signup/SignUpView.vue'
 import CommunityRoot from '@/views/community/CommunityRoot.vue'
 import TodayLearningView from '@/views/learning/TodayLearningView.vue'
-import TodayStudyView from '@/views/learning/TodayStudyView.vue'
+import TodayWordView from '@/views/learning/TodayWordView.vue'
 import MyPageView from '@/views/mypage/MyPageView.vue'
 import ProfileEditView from '@/components/profile/ProfileEditView.vue'
 import IndividualSettingsView from '@/components/profile/IndividualSettingsView.vue'
 import UserTotalStory from '@/views/mypage/UserTotalStory.vue'
+import TodayGrammarView from '@/views/learning/TodayGrammarView.vue'
+import TodayPronunciationView from '@/views/learning/TodayPronunciationView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -84,9 +86,9 @@ const router = createRouter({
       component: TodayLearningView
     },
     {
-      path: '/learning/today/study',
-      name: 'today-study',
-      component: TodayStudyView
+      path: '/learning/today/word',
+      name: 'today-word',
+      component: TodayWordView
     },
     // 프로필 수정
     {
@@ -105,7 +107,17 @@ const router = createRouter({
       path: '/mypage/stories',
       name: 'user-total-stories',
       component: UserTotalStory
-    }
+    },
+    {
+      path: '/learning/today/grammar',
+      name: 'today-grammar',
+      component: TodayGrammarView
+    },
+    {
+      path: '/learning/today/pronunciation',
+      name: 'today-pronunciation',
+      component: TodayPronunciationView
+    },
   ],
 })
 
