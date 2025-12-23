@@ -30,14 +30,23 @@
                                         <i class="fas fa-user input-icon"></i>
                                     </div>
                                 </div>
-
-                                <!-- <div class="form-group">
-                                    <label for="birthdate">생년월일</label>
+                                    <div class="form-group">
+                                    <label for="childAge">나의 나이</label>
                                     <div class="input-wrapper">
-                                        <input type="date" id="birthdate" required>
-                                        <i class="fas fa-calendar input-icon"></i>
+                                        <select id="childAge" required v-model="signUpForm.age">
+                                            <option value="">선택</option>
+                                            <option value="3">3세</option>
+                                            <option value="4">4세</option>
+                                            <option value="5">5세</option>
+                                            <option value="6">6세</option>
+                                            <option value="7">7세</option>
+                                            <option value="8">8세</option>
+                                            <option value="9">9세</option>
+                                            <option value="10">10세</option>
+                                        </select>
+                                        <i class="fas fa-birthday-cake input-icon"></i>
                                     </div>
-                                </div> -->
+                                </div>
                             </div>
 
                             <div class="form-group">
@@ -64,54 +73,6 @@
                                 <div class="input-wrapper">
                                     <input type="password" id="passwordConfirm" placeholder="비밀번호를 다시 입력해주세요" required>
                                     <i class="fas fa-check-circle input-icon"></i>
-                                </div>
-                            </div>
-
-                            <div class="form-row">
-                                <!-- <div class="form-group">
-                                    <label for="childName">아이 이름</label>
-                                    <div class="input-wrapper">
-                                        <input type="text" id="childName" placeholder="아이 이름" required>
-                                        <i class="fas fa-child input-icon"></i>
-                                    </div>
-                                </div> -->
-
-                                <div class="form-group">
-                                    <label for="childAge">아이 나이</label>
-                                    <div class="input-wrapper">
-                                        <select id="childAge" required v-model="signUpForm.age">
-                                            <option value="">선택</option>
-                                            <option value="3">3세</option>
-                                            <option value="4">4세</option>
-                                            <option value="5">5세</option>
-                                            <option value="6">6세</option>
-                                            <option value="7">7세</option>
-                                            <option value="8">8세</option>
-                                            <option value="9">9세</option>
-                                            <option value="10">10세</option>
-                                        </select>
-                                        <i class="fas fa-birthday-cake input-icon"></i>
-                                    </div>
-                                </div>
-
-                                <div class="form-group">
-                                    <label for="level">Level</label>
-                                    <div class="input-wrapper">
-                                        <select id="level" required v-model="signUpForm.level">
-                                            <option value="">선택</option>
-                                            <option value="1">Lv.1</option>
-                                            <option value="2">Lv.2</option>
-                                            <option value="3">Lv.3</option>
-                                            <option value="4">Lv.4</option>
-                                            <option value="5">Lv.5</option>
-                                            <option value="6">Lv.6</option>
-                                            <option value="7">Lv.7</option>
-                                            <option value="8">Lv.8</option>
-                                            <option value="9">Lv.9</option>
-                                            <option value="10">Lv.10</option>
-                                        </select>
-                                        <i class="fas fa-layer-group input-icon"></i>
-                                    </div>
                                 </div>
                             </div>
 
@@ -172,7 +133,7 @@ const signUpForm = reactive({
 })
 
 const signUpHandler = async () => {
-    if (!signUpForm.nickname || !signUpForm.email || !signUpForm.password || !signUpForm.age || !signUpForm.level) {
+    if (!signUpForm.nickname || !signUpForm.email || !signUpForm.password || !signUpForm.age) {
         alert("비어있는 항목을 채워주세요.")
         return;
     }
@@ -182,7 +143,7 @@ const signUpHandler = async () => {
         email: signUpForm.email,
         password: signUpForm.password,
         age: signUpForm.age,
-        level: signUpForm.level
+        level: 0,
     })
     .then(response => {
         store.login(
@@ -191,7 +152,7 @@ const signUpHandler = async () => {
             response.data.nickname,
             response.data.email
         )
-        router.push('/')
+        router.push('/onboarding')
     })
     .catch(error => {
         console.error("회원가입 실패:", error);
@@ -761,6 +722,10 @@ input:focus + .input-icon, select:focus + .input-icon {
     z-index: 9999;
     font-size: 24px;
     animation: particle-float 1s ease-out forwards;
+}
+
+#signupForm{
+    padding-top:30px;
 }
 
 @keyframes particle-float {

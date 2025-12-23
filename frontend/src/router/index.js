@@ -15,6 +15,7 @@ import IndividualSettingsView from '@/components/profile/IndividualSettingsView.
 import UserTotalStory from '@/views/mypage/UserTotalStory.vue'
 import TodayGrammarView from '@/views/learning/TodayGrammarView.vue'
 import TodayPronunciationView from '@/views/learning/TodayPronunciationView.vue'
+import OnboardingView from '@/views/learning/OnboardingView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -118,6 +119,12 @@ const router = createRouter({
       name: 'today-pronunciation',
       component: TodayPronunciationView
     },
+    {
+    path: '/onboarding',
+    name: 'onboarding',
+    component: OnboardingView,
+    meta: { requiresAuth: true } // 로그인 필요
+},
   ],
 })
 
