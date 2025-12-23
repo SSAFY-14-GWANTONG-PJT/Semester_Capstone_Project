@@ -7,14 +7,24 @@
 
     <div class="card-grid">
       
+      <div class="learning-card card-pink" @click="goTo('pronunciation')">
+          <div class="card-icon">👄</div>
+          <div class="card-content">
+            <h3>영어 발음표</h3>
+            <p>알파벳이 내는<br><strong>여러 소리</strong>를 배워요!</p>
+            <span class="status-badge">학습 하기</span>
+        </div>
+        <div class="card-bg-icon">ABC</div>
+      </div>
+
       <div class="learning-card card-green" @click="goTo('words')">
         <div class="card-icon">🍎</div>
         <div class="card-content">
           <h3>오늘의 단어</h3>
           <p>오늘 배워야 할<br><strong>단어 세트</strong>가 기다려요!</p>
-          <span class="status-badge">학습 전</span>
+          <span class="status-badge">학습 하기</span>
         </div>
-        <div class="card-bg-icon">A</div>
+        <div class="card-bg-icon">Hi</div>
       </div>
 
       <div class="learning-card card-blue" @click="goTo('interpretation')">
@@ -49,6 +59,7 @@
         <div class="card-bg-icon">📖</div>
       </div>
 
+      
     </div>
   </div>
 </template>
@@ -61,7 +72,7 @@ const router = useRouter()
 const goTo = (type) => {
   switch(type) {
     case 'words':
-      router.push({ name: 'today-study' })
+      router.push({ name: 'today-word' })
       break
     case 'interpretation':
       // router.push('/learning/interpretation')
@@ -71,6 +82,9 @@ const goTo = (type) => {
       break
     case 'story':
       router.push('/story/create') // 기존 스토리 생성 페이지 연결
+      break
+    case 'pronunciation': // 추가
+      router.push({ name: 'today-pronunciation' })
       break
   }
 }
@@ -197,6 +211,10 @@ const goTo = (type) => {
 .card-yellow:hover { background: #FFFBEB; }
 .card-yellow .card-icon, .card-yellow h3 { color: var(--orange); }
 
+.card-pink { border-color: #F9A8D4; }
+.card-pink:hover { background: #FDF2F8; }
+.card-pink .card-icon, .card-pink h3 { color: #DB2777; }
+
 /* 배지 및 태그 스타일 */
 .status-badge {
   display: inline-block;
@@ -204,8 +222,8 @@ const goTo = (type) => {
   border-radius: 20px;
   font-size: 0.9rem;
   font-weight: 800;
-  background: #EEE;
-  color: #888;
+  background: #da4099;
+  color: #EEE;
 }
 
 .card-green .status-badge { background: var(--primary); color: white; }
