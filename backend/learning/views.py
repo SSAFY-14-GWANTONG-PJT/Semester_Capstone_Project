@@ -5,7 +5,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 
 from .models import StudySet
-from .serializers import StudySetSerializer
+from .serializers import VocaSerializer
 from accounts.models import UserTracker
 
 class TodayLearningView(APIView):
@@ -34,12 +34,20 @@ class TodayLearningView(APIView):
                 "can_study": False
             }, status=status.HTTP_200_OK)
 
-        serializer = StudySetSerializer(study_set)
+
+        # 단어를 꺼내서 VocaSerializer로
+        vocas = study_set.vocas.all().order_by('id')
+
+        serializer = VocaSerializer(vocas, many=True)
+        
+        
         return Response({
-            "data": serializer.data,
             "can_study": True,
             "current_level": tracker.level,
-            "current_unit": tracker.unit_number
+            "current_unit": tracker.unit_number,
+            "data" : {
+                "vocas" : serializer.data
+            }
         }, status=status.HTTP_200_OK)
 
     def post(self, request):
@@ -69,5 +77,5 @@ class TodayLearningView(APIView):
         return Response({
             "message": message,
             "level": tracker.level,
-            "unit_number": tracker.unit_number
+            "unit_number": tracker.unit_number,
         }, status=status.HTTP_200_OK)

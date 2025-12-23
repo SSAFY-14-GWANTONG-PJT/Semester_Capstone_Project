@@ -51,7 +51,7 @@ const logoutHandler = async () => {
           <div class="menu-items">
             <RouterLink to="/" class="menu1">홈</RouterLink>
             <RouterLink :to="{name: 'community'}" class="menu2">커뮤니티</RouterLink>
-            <RouterLink :to="{name: 'today-learning'}" class="menu3">학습 로드맵</RouterLink>
+            <RouterLink :to="{name: 'today-learning'}" class="menu3">오늘의 학습</RouterLink>
           </div>
 
           <div class="nav-auth-section">

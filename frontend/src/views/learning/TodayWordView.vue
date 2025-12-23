@@ -2,7 +2,7 @@
   <div class="study-container">
     <div v-if="loading" class="loading-state">
       <div class="spinner">🍎</div>
-      <p>단어 친구들을 부르고 있어요...</p>
+      <p>단어들을 부르고 있어요...</p>
     </div>
 
     <div v-else-if="!canStudy" class="empty-state shadow-pop">
@@ -35,7 +35,7 @@
       </header>
 
       <main class="study-main">
-        <div class="card-area">
+       <div class="card-area">
           <div 
             class="flash-card" 
             :class="{ 'is-flipped': isFlipped }" 
@@ -56,7 +56,24 @@
 
             <div class="card-face card-back">
               <div class="card-tag">Korean Meaning</div>
-              <h1 class="meaning-text">{{ currentVoca.meaning }}</h1>
+              
+              <div class="meaning-list">
+  <div 
+    v-for="(item, index) in validMeanings" 
+    :key="index" 
+    class="meaning-item"
+  >
+    <span 
+      class="part-badge" 
+      :style="{ backgroundColor: getPartColor(item.part) }"
+    >
+      {{ item.part }}
+    </span>
+    
+    <span class="meaning-content">{{ item.content }}</span>
+  </div>
+</div>
+
               <div class="difficulty-badge">난이도: {{ currentVoca.cefr_band }}</div>
             </div>
           </div>
@@ -108,6 +125,42 @@ const currentUnit = ref(1)
 const vocas = ref([])
 const currentIndex = ref(0)
 const isFlipped = ref(false)
+
+const getPartColor = (partName) => {
+  // 한글 품사명에 따라 색상 코드 반환
+  if (partName.includes('명사')) return '#3B82F6'      // 파란색 (Noun)
+  if (partName.includes('대명사')) return '#EC4899'    // 핑크색 (Pronoun)
+  if (partName.includes('동사')) return '#EF4444'      // 빨간색 (Verb)
+  if (partName.includes('형용사')) return '#F59E0B'    // 노란/주황색 (Adjective)
+  if (partName.includes('부사')) return '#8B5CF6'      // 보라색 (Adverb)
+  if (partName.includes('전치사')) return '#10B981'    // 초록색 (Preposition)
+  if (partName.includes('접속사')) return '#6366F1'    // 인디고 (Conjunction)
+  if (partName.includes('관사')) return '#64748B'      // 회색 (Article)
+  
+  return '#10B981' // 기본값 (초록색)
+}
+
+const validMeanings = computed(() => {
+  const v = currentVoca.value
+  if (!v || !v.meanings) return []
+
+  return v.meanings.filter(item => {
+    // 1. [필수] 품사(part)나 뜻(content) 중 하나라도 없으면 탈락 (null, undefined, 빈 문자열)
+    if (!item.part || !item.content) return false
+    
+    // 2. [필수] 공백만 있는 경우도 탈락
+    if (item.part.trim() === '' || item.content.trim() === '') return false
+
+    // 3. [오류 방지] 품사 데이터가 너무 길면(파싱 에러로 뜻이 들어간 경우) 탈락
+    // (예: "규제하다 (동사..." -> 길이가 길어서 제외됨)
+    if (item.part.length > 8) return false
+
+    // 4. [선택] 'Unknown' 데이터 제외
+    if (item.part === 'Unknown') return false
+    
+    return true
+  })
+})
 
 const currentVoca = computed(() => {
   if (vocas.value.length === 0) return {}
@@ -277,8 +330,9 @@ onMounted(() => { fetchStudySet() })
 
 .card-face {
   position: absolute;
-  inset: 0; /* width/height 100% 대신 사용 */
-  backface-visibility: hidden;
+  inset: 0;
+  -webkit-backface-visibility: hidden; 
+  backface-visibility: hidden; 
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -286,11 +340,14 @@ onMounted(() => { fetchStudySet() })
   padding: 40px;
   box-shadow: 0 20px 0 #CBD5E1;
   border: 6px solid white;
+  background: white; 
 }
 
 .card-front {
   background: white;
-  justify-content: center; /* 단어를 상하 중앙에 */
+  justify-content: center;
+  transform: rotateY(0deg); 
+  z-index: 2; 
 }
 
 .card-back {
@@ -298,6 +355,7 @@ onMounted(() => { fetchStudySet() })
   transform: rotateY(180deg);
   border-color: #4ADE80;
   justify-content: center;
+  z-index: 1;
 }
 
 .card-tag {
@@ -319,11 +377,48 @@ onMounted(() => { fetchStudySet() })
   margin-top: -40px; /* 손가락과 공간 배분 */
 }
 
-.meaning-text { 
-  font-size: 300%; 
-  font-weight: 900; 
-  color: #059669; 
-  padding-bottom : 10%;
+.meaning-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  width: 100%;
+  max-height: 250px; /* 너무 많으면 스크롤 되거나 잘리도록 */
+  overflow-y: auto;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 0;
+  margin-bottom: 20px;
+}
+
+.meaning-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: white;
+  padding: 10px 20px;
+  border-radius: 15px;
+  box-shadow: 0 4px 0 #DCFCE7;
+  border: 2px solid #86EFAC;
+  width: 90%; /* 카드 꽉 차게 */
+}
+
+.part-badge {
+  background: #10B981;
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 8px;
+  text-transform: uppercase;
+  flex-shrink: 0; /* 배지 크기 줄어들지 않게 */
+}
+
+.meaning-content {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #065F46;
+  word-break: keep-all; /* 한글 단어 중간 끊김 방지 */
+  text-align: left;
 }
 
 .difficulty-badge{
@@ -381,6 +476,10 @@ onMounted(() => { fetchStudySet() })
   font-size: 1.3rem;
   cursor: pointer;
   transition: all 0.2s;
+}
+
+.header-center { 
+  text-align : center;
 }
 
 .prev-btn { background: #A7F3D0; color: #065F46; box-shadow: 0 8px 0 #34D399; }
