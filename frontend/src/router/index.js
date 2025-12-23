@@ -13,6 +13,7 @@ import MyPageView from '@/views/mypage/MyPageView.vue'
 import ProfileEditView from '@/components/profile/ProfileEditView.vue'
 import IndividualSettingsView from '@/components/profile/IndividualSettingsView.vue'
 import UserTotalStory from '@/views/mypage/UserTotalStory.vue'
+import TodayGrammarView from '@/views/learning/TodayGrammarView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -105,6 +106,11 @@ const router = createRouter({
       path: '/mypage/stories',
       name: 'user-total-stories',
       component: UserTotalStory
+    },
+    {
+      path: '/learning/today/grammar',
+      name: 'today-grammar',
+      component: TodayGrammarView
     }
   ],
 })

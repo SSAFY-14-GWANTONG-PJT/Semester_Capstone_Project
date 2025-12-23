@@ -61,16 +61,13 @@ const router = useRouter()
 const goTo = (type) => {
   switch(type) {
     case 'words':
-      alert('오늘의 단어 학습 페이지로 이동합니다! (준비 중)')
       router.push({ name: 'today-study' })
       break
     case 'interpretation':
-      alert('문장 해석 퀴즈 페이지로 이동합니다! (준비 중)')
       // router.push('/learning/interpretation')
       break
     case 'grammar':
-      alert('문장 형식 정리 페이지로 이동합니다! (준비 중)')
-      // router.push('/learning/grammar')
+      router.push({ name : 'today-grammar'})
       break
     case 'story':
       router.push('/story/create') // 기존 스토리 생성 페이지 연결
