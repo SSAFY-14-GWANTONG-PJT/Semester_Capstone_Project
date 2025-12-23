@@ -106,7 +106,8 @@ const loginHandler = async () => {
         store.login(
             response.data.token, 
             response.data.refreshToken,
-            response.data.nickname
+            response.data.nickname,
+            response.data.email
         )
         router.push('/')
     })

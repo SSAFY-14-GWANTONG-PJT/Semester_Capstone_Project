@@ -55,12 +55,15 @@ const submitPost = async () => {
     if (!isValid.value) return
 
     try {
-        await axios.post('/api/community/posts/', {
+        const res = await axios.post('/api/community/posts/', {
             title: title.value,
             content: content.value
         })
         alert('이야기가 등록되었습니다! 🎉')
-        router.push('/community')
+        
+        const newPostId = res.data.id
+        
+        router.push(`/community/${newPostId}`)
     } catch (error) {
         console.error('게시글 작성 실패:', error)
         alert('등록에 실패했어요 😢')

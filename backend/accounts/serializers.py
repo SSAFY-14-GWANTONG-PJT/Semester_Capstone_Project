@@ -25,6 +25,7 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         # Vue에서 response.data.nickname으로 접근할 수 있도록 필드 추가
         data['nickname'] = self.user.nickname
         data['refreshToken'] = data.pop('refresh') 
+        data['email'] = self.user.email
 
         return data
 

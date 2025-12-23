@@ -1,7 +1,7 @@
 from django.urls import path
-from . import views
+from .views import TodayLearningView, OnboardingView
 
 urlpatterns = [
-    # 프론트엔드에서 /api/learning/today/ 로 요청하게 됩니다.
-    path('today/', views.TodayLearningView.as_view(), name='today_learning'),
+    path('today/', TodayLearningView.as_view(), name='today_learning'),
+    path('onboarding/', OnboardingView.as_view(), name='onboarding'),
 ]
