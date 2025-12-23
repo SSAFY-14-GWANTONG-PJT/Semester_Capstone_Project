@@ -5,14 +5,16 @@ export const useCounterStore = defineStore('counter', () => {
   const token = ref(null)
   const refreshToken = ref(null)
   const nickname = ref('')
+  const email = ref('') // 이메일 추가
   const userId = ref(null) // 사용자 ID 추가
   const experience = ref(0)
   const isLoggedIn = computed(() => !!token.value)
 
-  function login(newToken, newRefreshToken, newNickname) {
+  function login(newToken, newRefreshToken, newNickname, newEmail) {
     token.value = newToken
     refreshToken.value = newRefreshToken
     nickname.value = newNickname
+    email.value = newEmail
 
     // 토큰에서 ID 추출
     try {
@@ -28,6 +30,7 @@ export const useCounterStore = defineStore('counter', () => {
     refreshToken.value = null
     nickname.value = ''
     userId.value = null
+    email.value = ''
   }
 
   const savedSettings = JSON.parse(localStorage.getItem('user-settings') || '{}')
@@ -64,6 +67,7 @@ export const useCounterStore = defineStore('counter', () => {
   return {
     isLoggedIn,
     nickname,
+    email,
     userId,
     experience,
     login,

@@ -28,6 +28,7 @@ def signup(request):
             'token' : str(refresh.access_token),
             'refreshToken' : str(refresh),
             'nickname' : user.nickname,
+            'email': user.email,
             'message': '회원가입 완료 및 로그인 성공! ✨'
         }, status=status.HTTP_201_CREATED)
     

@@ -8,28 +8,67 @@
         <article class="post-card">
             <div class="post-header">
                 <div class="header-top">
-                    <span class="genre-badge">{{ getGenreName(post.genre) }}</span>
+                    <span class="genre-badge">자유</span>
                     <div class="post-meta">
                         <span class="date">{{ formatDate(post.created_at) }}</span>
                     </div>
                 </div>
-                <h1 class="post-title">{{ post.title }}</h1>
+
+                <div v-if="isEditingPost" class="edit-title-wrapper">
+                    <input 
+                        v-model="editingTitle" 
+                        class="edit-title-input" 
+                        placeholder="제목을 입력하세요"
+                    />
+                </div>
+                <h1 v-else class="post-title">{{ post.title }}</h1>
+
                 <div class="author-info">
-                    <div class="avatar">U</div> <!-- 닉네임 표시 필요 -->
-                    <span class="nickname">User {{ post.user }}</span>
+                    <div class="avatar">U</div>
+                    <span class="nickname">{{ post.user_nickname }}</span>
                 </div>
             </div>
 
-            <div class="post-content">
+            <div v-if="isEditingPost" class="edit-content-wrapper">
+                <textarea 
+                    v-model="editingPostContent" 
+                    class="edit-post-textarea"
+                    placeholder="내용을 입력하세요"
+                ></textarea>
+            </div>
+            <div v-else class="post-content">
                 {{ post.content }}
             </div>
 
             <div class="post-actions">
-                <button class="action-btn like-btn" :class="{ active: liked }" @click="toggleLike">
+                <button 
+                    v-if="store.email !== post.user_email"
+                    class="action-btn like-btn" 
+                    :class="{ active: liked }" 
+                    @click="toggleLike"
+                >
                     <i class="fas fa-heart"></i>
                     <span>좋아요 {{ likeCount }}</span>
                 </button>
-                <!-- 본인 글일 경우 수정/삭제 버튼 표시 (구현 필요) -->
+
+                <div v-else class="owner-actions">
+                    <template v-if="isEditingPost">
+                        <button class="action-btn save-btn" @click="updatePost">
+                            <i class="fas fa-check"></i> 저장하기
+                        </button>
+                        <button class="action-btn cancel-btn" @click="cancelEditPost">
+                            <i class="fas fa-times"></i> 취소
+                        </button>
+                    </template>
+                    <template v-else>
+                        <button class="action-btn edit-btn" @click="startEditPost">
+                            <i class="fas fa-pen"></i> 수정하기
+                        </button>
+                        <button class="action-btn delete-btn" @click="deletePost">
+                            <i class="fas fa-trash"></i> 삭제하기
+                        </button>
+                    </template>
+                </div>
             </div>
         </article>
 
@@ -57,7 +96,7 @@
                                  하지만 백엔드에서 닉네임을 안주므로 일단 User ID로 표시하거나 
                                  본인인 경우 '나'라고 표시) -->
                             <span class="nickname">
-                                {{ comment.user === store.userId ? store.nickname + ' (나)' : 'User ' + comment.user }}
+                                {{  comment.user_nickname }}
                             </span>
                             <span class="date">{{ formatDate(comment.created_at) }}</span>
                         </div>
@@ -72,17 +111,18 @@
                         </div>
 
                         <!-- 일반 모드 -->
-                        <p v-else class="comment-text">{{ comment.content }}</p>
-                    </div>
-
-                    <!-- 댓글 수정/삭제 버튼 (본인일 경우) -->
-                    <div class="comment-options" v-if="comment.user === store.userId && editingCommentId !== comment.id">
-                        <button class="opt-btn edit" @click="startEdit(comment)" title="수정">
-                            <i class="fas fa-pen"></i>
-                        </button>
-                        <button class="opt-btn delete" @click="deleteComment(comment.id)" title="삭제">
-                            <i class="fas fa-trash"></i>
-                        </button>
+                        <div v-else>
+                            <p class="comment-text">{{ comment.content }}</p>
+                            <div class="comment-options" v-if="comment.user_email === store.email && editingCommentId !== comment.id">
+                            <button class="opt-btn edit" @click="startEdit(comment)" title="수정">
+                                <i class="fas fa-pen"></i> 수정
+                            </button>
+                            <button class="opt-btn delete" @click="deleteComment(comment.id)" title="삭제">
+                                <i class="fas fa-trash"></i> 삭제
+                            </button>
+                            </div>
+                        </div>
+                       
                     </div>
                 </div>
             </div>
@@ -109,8 +149,50 @@ const newComment = ref('')
 const liked = ref(false)
 const likeCount = ref(0)
 
+// 게시글 수정
+const isEditingPost = ref(false)
+const editingTitle = ref('')
+const editingPostContent = ref('')
+
+const startEditPost = () => {
+    isEditingPost.value = true
+    editingTitle.value = post.value.title
+    editingPostContent.value = post.value.content
+}
+
+const cancelEditPost = () => {
+    isEditingPost.value = false
+    editingTitle.value = ''
+    editingPostContent.value = ''
+}
+
+const updatePost = async () => {
+    if (!editingTitle.value.trim() || !editingPostContent.value.trim()) {
+        alert('제목과 내용을 모두 입력해주세요.')
+        return
+    }
+
+    try {
+        const res = await axios.put(`/api/community/posts/${postId}/`, {
+            title: editingTitle.value,
+            content: editingPostContent.value
+        })
+        
+        // 데이터 갱신 및 모드 전환
+        post.value.title = res.data.title
+        post.value.content = res.data.content
+        isEditingPost.value = false
+        
+        alert('게시글이 성공적으로 수정되었습니다! ✨')
+    } catch (error) {
+        console.error('게시글 수정 실패:', error)
+        alert('수정 중 오류가 발생했습니다.')
+    }
+}
+
+
 // 댓글 수정 상태
-const editingCommentId = ref(null)
+const editingCommentId = ref(null) 
 const editingContent = ref('')
 
 const postId = route.params.id
@@ -123,8 +205,8 @@ const fetchPost = async () => {
     try {
         const res = await axios.get(`/api/community/posts/${postId}/`)
         post.value = res.data
-        likeCount.value = post.value.like || 0
-        // 좋아요 상태 확인 로직 필요 (API가 지원한다면)
+        likeCount.value = res.data.like_count || 0
+        liked.value = res.data.is_liked || false
     } catch (error) {
         console.error('게시글 로드 실패:', error)
     }
@@ -134,6 +216,7 @@ const fetchComments = async () => {
     try {
         const res = await axios.get(`/api/community/posts/${postId}/comments/`)
         comments.value = res.data
+        console.log(comments.value)
     } catch (error) {
         console.error('댓글 로드 실패:', error)
     }
@@ -154,6 +237,26 @@ const submitComment = async () => {
     }
 }
 
+
+// 게시글 삭제
+const deletePost = async () => {
+    if (!confirm('정말 이 게시글을 삭제하시겠습니까?\n삭제된 글은 복구할 수 없어요! 😢')) return
+
+    try {
+        // 백엔드 URL 규격에 맞춰 DELETE 요청 (이미 작성하신 post_detail 뷰가 처리)
+        await axios.delete(`/api/community/posts/${postId}/`)
+        alert('게시글이 삭제되었습니다.')
+        router.push('/community') // 삭제 후 목록으로 이동
+    } catch (error) {
+        console.error('게시글 삭제 실패:', error)
+        if (error.response?.status === 403) {
+            alert('삭제 권한이 없습니다.')
+        } else {
+            alert('삭제 중 오류가 발생했습니다.')
+        }
+    }
+}
+
 // 댓글 수정 시작
 const startEdit = (comment) => {
     editingCommentId.value = comment.id
@@ -171,7 +274,7 @@ const updateComment = async (commentId) => {
     if (!editingContent.value.trim()) return
 
     try {
-        await axios.put(`/api/community/comments/${commentId}`, {
+        await axios.put(`/api/community/comments/${commentId}/`, {
             content: editingContent.value
         })
         editingCommentId.value = null
@@ -187,7 +290,7 @@ const deleteComment = async (commentId) => {
     if(!confirm('정말 삭제하시겠습니까?')) return
 
     try {
-        await axios.delete(`/api/community/comments/${commentId}`)
+        await axios.delete(`/api/community/comments/${commentId}/`)
         fetchComments()
     } catch (error) {
         console.error('댓글 삭제 실패:', error)
@@ -203,15 +306,6 @@ const toggleLike = async () => {
     } catch (error) {
         console.error('좋아요 실패:', error)
     }
-}
-
-const getGenreName = (code) => {
-    if (!code) return '자유'
-    const map = {
-        hero: '영웅', happy: '행복', sad: '슬픔',
-        romance: '로맨스', horror: '호러', fantasy: '판타지', sf: 'SF/우주'
-    }
-    return map[code] || '기타'
 }
 
 const formatDate = (dateStr) => {
@@ -436,6 +530,9 @@ onMounted(() => {
 .comment-text {
     color: #444;
     line-height: 1.5;
+    word-break: break-all;      /* 아주 긴 단어도 강제로 줄바꿈합니다 */
+    overflow-wrap: break-word; /* 단어가 넘칠 경우 줄바꿈을 허용합니다 */
+    white-space: pre-wrap;
 }
 
 .loading {
@@ -527,5 +624,93 @@ onMounted(() => {
     border-radius: 10px;
     cursor: pointer;
     font-weight: 700;
+}
+
+/* 기존 post-actions 하단에 추가 */
+.owner-actions {
+    display: flex;
+    gap: 12px;
+}
+
+/* 수정 버튼 스타일 */
+.edit-btn:hover {
+    border-color: var(--secondary);
+    color: var(--secondary);
+    background: #F0F9FF;
+}
+
+/* 삭제 버튼 스타일 */
+.delete-btn:hover {
+    border-color: #FF6B6B;
+    color: #FF6B6B;
+    background: #FFF5F5;
+}
+
+/* 버튼 아이콘 간격 */
+.action-btn i {
+    font-size: 1rem;
+}
+
+/* 반응형: 화면이 작을 때 버튼 배치 */
+@media (max-width: 480px) {
+    .owner-actions {
+        width: 100%;
+        flex-direction: column;
+    }
+    .action-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* 제목 수정 입력창 */
+.edit-title-input {
+    width: 100%;
+    font-size: 2rem;
+    font-weight: 800;
+    color: #3C3C3C;
+    border: 3px solid #E5E5E5;
+    border-radius: 15px;
+    padding: 10px 15px;
+    margin-bottom: 20px;
+    font-family: 'Nunito', 'Jua', sans-serif;
+    outline: none;
+}
+.edit-title-input:focus {
+    border-color: var(--secondary);
+}
+
+/* 본문 수정 텍스트 영역 */
+.edit-post-textarea {
+    width: 100%;
+    min-height: 250px;
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: #333;
+    border: 3px solid #E5E5E5;
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 30px;
+    font-family: inherit;
+    resize: vertical;
+    outline: none;
+}
+.edit-post-textarea:focus {
+    border-color: var(--secondary);
+}
+
+/* 수정 중 버튼들 */
+.save-btn {
+    background: #58CC02 !important;
+    color: white !important;
+    border-color: #58CC02 !important;
+}
+.save-btn:hover {
+    background: #46A302 !important;
+}
+
+.cancel-btn {
+    background: #F7F7F7 !important;
+    color: #888 !important;
 }
 </style>
