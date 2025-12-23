@@ -29,7 +29,8 @@ instance.interceptors.response.use(
     return response
   },
   async (error) => {
-    const { config, response: { status } } = error
+    const config = error.config
+    const status = error.response?.status
     const store = useCounterStore()
 
     // 401 Unauthorized(토큰 만료) 에러가 발생했을 때
@@ -62,6 +63,10 @@ instance.interceptors.response.use(
         router.push('/login')
         return Promise.reject(refreshError)
       }
+    }
+
+    if (!error.response) {
+      console.error("네트워크 에러가 발생했거나 서버가 응답하지 않습니다.")
     }
 
     return Promise.reject(error)

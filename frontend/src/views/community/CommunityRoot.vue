@@ -25,9 +25,7 @@
                 </div>
 
                 <div class="category-tabs">
-                    <button class="tab-btn" :class="{ active: currentTab === 'all' }" @click="setTab('all')">전체 ✨</button>
-                    <!-- <button class="tab-btn" :class="{ active: currentTab === 'story' }" @click="setTab('story')">동화 공유 📖</button>
-                    <button class="tab-btn" :class="{ active: currentTab === 'chat' }" @click="setTab('chat')">자유 수다 💬</button> -->
+                    <button class="tab-btn" title="글 쓰기" @click="goToCreate">✨ 글쓰기 ✨</button>
                 </div>
 
                 <div v-if="loading" class="loading-area">
@@ -47,7 +45,7 @@
                     >
                         <!-- 게시글은 썸네일이 없을 수도 있지만, 만약 이미지 첨부 기능이 생긴다면 활용 -->
                         <div class="card-header-img" :style="getCardHeaderStyle(null)">
-                            <span class="genre-badge">{{ getGenreName(post.genre) }}</span>
+                            <span class="genre-badge">자유</span>
                             <div class="card-icon">💬</div>
                         </div>
 
@@ -63,19 +61,43 @@
                                          User 정보를 가져오려면 Serializer 수정이 필요할 수 있음. 
                                          일단은 'User'로 표시하거나 post.user가 객체인지 확인 필요. -->
                                     <div class="author-avatar">U</div>
-                                    <span>User {{ post.user }}</span> 
+                                    <span>{{ post.user_nickname }}</span> 
                                 </div>
                                 <div class="stats">
-                                    <span class="stat-item likes"><i class="fas fa-heart"></i> {{ post.like || 0 }}</span>
-                                    <span class="stat-item comments"><i class="fas fa-comment"></i> 0</span>
+                                    <span class="stat-item likes"><i class="fas fa-heart"></i> {{ post.like_count || 0 }}</span>
+                                    <span class="stat-item comments"><i class="fas fa-comment"></i> {{ post.comment_count || 0 }}</span>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="pagination">
-                    <a href="#" class="page-link active">1</a>
+                <div class="pagination" v-if="totalPages > 0">
+                    <button 
+                        class="page-link" 
+                        :disabled="currentPage === 1"
+                        @click="changePage(currentPage - 1)"
+                    >
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+
+                    <button 
+                        v-for="page in totalPages" 
+                        :key="page"
+                        class="page-link"
+                        :class="{ active: currentPage === page }"
+                        @click="changePage(page)"
+                    >
+                        {{ page }}
+                    </button>
+
+                    <button 
+                        class="page-link" 
+                        :disabled="currentPage === totalPages"
+                        @click="changePage(currentPage + 1)"
+                    >
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
                 </div>
             </div>
         </section>
@@ -87,32 +109,67 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, watch, computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import axios from '@/api/index.js'
 
+const route = useRoute()
 const router = useRouter()
 const posts = ref([])
 const loading = ref(true)
 const currentTab = ref('all') // 'all', 'story', 'chat'
 
-// 게시글 목록 불러오기
+// --- 페이지네이션 관련 상태 ---
+const totalCount = ref(0) // 전체 게시글 수
+const pageSize = 6 // 한 페이지당 보여줄 개수 (Django settings.py와 일치해야 함)
+// URL의 ?page= 값을 가져오거나 없으면 1
+const currentPage = computed(() => Number(route.query.page) || 1)
+// 전체 페이지 수 계산
+const totalPages = computed(() => Math.ceil(totalCount.value / pageSize))
+
+// 게시글 목록 불러오기 (page 파라미터 추가)
 const fetchPosts = async () => {
     loading.value = true
     try {
-        // status 필터링은 백엔드 구현에 따라 다를 수 있음. 
-        // 현재 백엔드 views.py에는 status 파라미터 처리가 되어 있음.
-        // 탭에 따라 status를 다르게 보낼 수도 있고, 프론트에서 필터링 할 수도 있음.
-        // 여기서는 우선 전체를 불러오고 프론트에서 탭에 따라 필터링하거나,
-        // API에 status 파라미터를 전달하는 방식을 사용할 수 있음.
-        // 일단 전체 목록을 불러옵니다.
-        const res = await axios.get(`/api/community/posts`)
-        posts.value = res.data
+        // API 요청 시 현재 페이지와 탭(필터)을 전달
+        const res = await axios.get(`/api/community/posts/`, {
+            params: {
+                page: currentPage.value,
+                status: currentTab.value !== 'all' ? currentTab.value : null
+            }
+        })
+        
+        // 중요: DRF 페이지네이션 적용 후 데이터는 res.data.results에 들어있음
+        posts.value = res.data.results
+        totalCount.value = res.data.count // 전체 개수 저장
     } catch (error) {
         console.error("게시글 목록 로드 실패:", error)
+        posts.value = []
     } finally {
         loading.value = false
     }
+}
+
+// 페이지 이동 함수 (URL을 변경하면 watch가 감지함)
+const changePage = (page) => {
+    if (page < 1 || page > totalPages.value) return
+    router.push({
+        query: { ...route.query, page: page }
+    })
+    // 페이지 이동 시 상단으로 스크롤
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+// URL의 쿼리(page)가 바뀔 때마다 서버에서 다시 가져오기
+watch(() => route.query.page, () => {
+    fetchPosts()
+})
+
+// 탭 변경 시 페이지를 1페이지로 초기화하여 이동
+const setTab = (tab) => {
+    currentTab.value = tab
+    router.push({ query: { page: 1 } })
+    fetchPosts()
 }
 
 // 상세 페이지 이동
@@ -122,24 +179,6 @@ const goDetail = (id) => {
 
 const goToCreate = () => {
     router.push('/community/create')
-}
-
-// 탭 변경
-const setTab = (tab) => {
-    currentTab.value = tab
-    // 탭 변경 시 API를 다시 호출하거나 리스트를 필터링 할 수 있음
-    // 예: fetchPosts(tab)
-}
-
-// 헬퍼 함수들
-const getGenreName = (code) => {
-    // 게시글에는 장르가 없을 수 있으므로 체크
-    if (!code) return '자유'
-    const map = {
-        hero: '영웅', happy: '행복', sad: '슬픔',
-        romance: '로맨스', horror: '호러', fantasy: '판타지', sf: 'SF/우주'
-    }
-    return map[code] || '기타'
 }
 
 // 썸네일 스타일 (게시글은 썸네일이 없을 수 있음)
@@ -340,20 +379,33 @@ body {
     overflow-x: auto;
     padding-bottom: 10px;
 }
+
 .tab-btn {
-    padding: 10px 20px;
-    border-radius: 20px;
-    border: 2px solid #E5E5E5;
-    background: white;
-    font-weight: 700;
-    color: #888;
+    padding: 12px 28px;
+    border-radius: 25px;
+    border: none; /* 테두리를 없애고 그림자로 입체감 표현 */
+    background: linear-gradient(135deg, #58CC02 0%, #89E152 100%); /* 화사한 초록 그라데이션 */
+    color: white; /* 글자는 흰색으로 대비 */
+    font-size: 1.05rem;
+    font-weight: 800;
     cursor: pointer;
     white-space: nowrap;
+    box-shadow: 0 4px 15px rgba(88, 204, 2, 0.3); /* 부드러운 초록색 그림자 */
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* 통통 튀는 느낌의 애니메이션 */
+    font-family: 'Jua', 'Nunito', sans-serif;
 }
-.tab-btn.active {
-    background: var(--primary);
-    border-color: var(--primary);
-    color: white;
+
+/* 마우스를 올렸을 때 (Hover) */
+.tab-btn:hover {
+    transform: scale(1.01); /* 살짝 커지면서 위로 떠오름 */
+    box-shadow: 0 8px 25px rgba(88, 204, 2, 0.4); /* 그림자가 깊어짐 */
+    background: linear-gradient(135deg, #46A302 0%, #58CC02 100%); /* 색상이 살짝 진해짐 */
+}
+
+/* 클릭하는 순간 (Active) */
+.tab-btn:active {
+    transform: scale(0.95) translateY(0); /* 살짝 눌리는 느낌 */
+    box-shadow: 0 2px 10px rgba(88, 204, 2, 0.2);
 }
 
 /* 게시글 카드 */
@@ -452,13 +504,47 @@ body {
     border: none; z-index: 100;
 }
 .write-btn:hover { transform: scale(1.1) rotate(90deg); }
-.pagination { display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
-.page-link {
-    width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
-    border-radius: 12px; background: white; color: var(--text); font-weight: 700; text-decoration: none;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+/* 기존 pagination 스타일 수정/확장 */
+.pagination { 
+    display: flex; 
+    justify-content: center; 
+    align-items: center;
+    gap: 10px; 
+    margin-top: 40px; 
 }
-.page-link.active { background: var(--purple); color: white; }
+
+.page-link {
+    width: 40px; 
+    height: 40px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    border-radius: 12px; 
+    background: white; 
+    color: var(--text); 
+    font-weight: 700; 
+    border: none; /* button 태그이므로 border 제거 */
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    transition: all 0.2s;
+}
+
+.page-link:hover:not(:disabled) {
+    background: #f0f0f0;
+    transform: translateY(-2px);
+}
+
+.page-link.active { 
+    background: var(--purple); 
+    color: white; 
+    box-shadow: 0 4px 15px rgba(206, 130, 255, 0.4);
+}
+
+.page-link:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #eee;
+}
 
 @media (max-width: 768px) {
     .nav-links { display: none; }

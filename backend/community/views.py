@@ -9,8 +9,10 @@ from rest_framework import status
 from .models import Post, Comment, LikeComment, LikePost
 from .serializers import PostSerializer, CommentSerializer
 
+from rest_framework.pagination import PageNumberPagination
+
 @api_view(['GET', 'POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticatedOrReadOnly])
 def post_list_create(request):
     # 게시글 목록 조회
     if request.method == 'GET':
@@ -25,11 +27,20 @@ def post_list_create(request):
         sort_param = request.query_params.get('sort', '-created_at')
         qs = qs.order_by(sort_param)
 
+        # 페이지네이션 처리 시작
+        paginator = PageNumberPagination()
+
+        page = paginator.paginate_queryset(qs, request)
+        if page is not None:
+            serializer = PostSerializer(page, many=True, context={'request': request})
+            # get_paginated_response는 count, next, previous, results가 포함된 Response를 반환합니다.
+            return paginator.get_paginated_response(serializer.data)
+        
         # 전체 반환, 차후 pagination
-        serializer = PostSerializer(qs, many=True)
+        serializer = PostSerializer(qs, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    serializer = PostSerializer(data=request.data)
+    serializer = PostSerializer(data=request.data, context={'request': request})
     if serializer.is_valid():
         # user는 request.user로 강제 세팅
         serializer.save(user=request.user)
@@ -44,7 +55,7 @@ def post_detail(request, post_id):
 
     # 상세 조회
     if request.method == 'GET':
-        serializer = PostSerializer(post)
+        serializer = PostSerializer(post, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     # 수정
@@ -55,7 +66,7 @@ def post_detail(request, post_id):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        serializer = PostSerializer(post, data=request.data, partial=False)
+        serializer = PostSerializer(post, data=request.data, partial=False, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -90,15 +101,12 @@ def post_like_toggle(request, post_id):
     else:
         liked = True
 
-    # Post.like 카운트 필드 동기화
-    if hasattr(post, 'like'):
-        post.like = LikePost.objects.filter(post=post).count()
-        post.save(update_fields=['like'])
+    like_count = LikePost.objects.filter(post=post).count()
 
     return Response(
         {
             'liked': liked,
-            'like_count': getattr(post, 'like', None),
+            'like_count': like_count,
         },
         status=status.HTTP_200_OK
     )
@@ -154,7 +162,7 @@ def comment_update_delete(request, comment_id):
 
 # 댓글 좋아요 토글 (수정 중)
 @api_view(['POST']) #POST /comments/{comment_id}/like
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticatedOrReadOnly])
 def comment_like_toggle(request, comment_id):
     # LikeComment 중복 방지 해야함
     comment = get_object_or_404(Comment, pk=comment_id)

@@ -55,7 +55,10 @@ REST_FRAMEWORK = {
         
         # 2순위: 개발 중 브라우저에서 편리하게 API를 테스트하기 위한 세션 인증
         'rest_framework.authentication.SessionAuthentication',
-    ]
+    ],
+    # 페이지네이션
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 6, # 한 페이지에 게시글 6개씩 보여주기
 }
 
 from datetime import timedelta
