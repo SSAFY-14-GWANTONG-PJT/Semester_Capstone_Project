@@ -111,7 +111,7 @@ const phonicsData = [
   { letter: 'U', sound: 'ʌ', word: 'Umbrella', korSound: '엄:브렐라', mean: '우산', icon: '☂️', mouth: '입을 편안하게 벌리고 "어"!', color: 'c-purple' },
   { letter: 'V', sound: 'v', word: 'Van', korSound: '밴:', mean: '자동차', icon: '🚐', mouth: '입술을 떨며 "브으"!', color: 'c-pink' },
   { letter: 'W', sound: 'w', word: 'Whale', korSound: '웨:일', mean: '고래', icon: '🐳', mouth: '입술을 모았다 펼치며 "우어"!', color: 'c-orange' },
-  { letter: 'X', sound: 'ks', word: 'X-ray', korSound: '엑스:레이', mean: '엑스레이', icon: '🩻', mouth: '"크" 뒤에 "스"를 붙여 "크스"!', color: 'c-teal' },
+  { letter: 'X', sound: 'ks', word: 'Boxing', korSound: '박ㅋ:싱', mean: '복싱', icon: '🥊', mouth: '"크" 뒤에 "스"를 붙여 "크스"!', color: 'c-teal' },
   { letter: 'Y', sound: 'j', word: 'Yo-yo', korSound: '요:요', mean: '요요', icon: '🪀', mouth: '"이"를 짧게 하고 "이요"!', color: 'c-red' },
   { letter: 'Z', sound: 'z', word: 'Zebra', korSound: '지:브라', mean: '얼룩말', icon: '🦓', mouth: '꿀벌처럼 징~ "즈으"!', color: 'c-blue' }
 ]
