@@ -68,7 +68,9 @@ class StoryResponse(BaseModel):
 # 동화 기반 문제생성 모델
 class ProblemRequest(BaseModel):
     story_text: str # 동화내용 들어가야
-    num_questions: int = 5 # 만들 문제의 개수
+    num_questions: int = 8  # 기본 8문제
+    target_vocab: List[dict] = []  # 백엔드에서 준 정답 단어들
+    distractor_pool: List[str] = [] # 백엔드에서 준 오답 뜻들
 
 # 문제 선택지 모델
 class ChoiceItem(BaseModel):
@@ -125,21 +127,43 @@ story_prompt_template = PromptTemplate.from_template(
 problem_prompt_template = PromptTemplate.from_template(
     """
     You are an English education expert for children.
-    Based on the provided story, create {num_questions} multiple-choice questions.
+    Create exactly {num_questions} multiple-choice questions based on the story.
 
-    [Story]
-    {story_text}
+    [Structure Requirements]
+    You MUST divide the questions into two types:
+    
+    1. **Vocabulary Questions (5 questions)**
+       - If `Target Vocab` is provided, use those words first.
+       - If `Target Vocab` is empty, pick 5 difficult words from the story.
+       - **Question Format:** "What is the meaning of '**word**'?" (Highlight the word).
+       - **Choices:**
+         - Correct Answer: The Korean meaning of the word.
+         - Incorrect Answers: Pick random meanings from `Distractor Pool`. If pool is empty, generate unrelated Korean meanings.
 
-    [Requirements]
-    1. Create exactly {num_questions} questions.
-    2. Each question must have **5 choices**.
-    3. Only **one choice** must be correct (`is_correct`: true).
-    4. The questions should test reading comprehension.
-    5. Language: English Only.
+    2. **Reading Comprehension Questions (3 questions)**
+       - Ask about the main character, plot, or lesson of the story.
+       - Question and Choices must be in **English**.
+
+    [Inputs]
+    - Story: {story_text}
+    - Target Vocab: {target_vocab}
+    - Distractor Pool: {distractor_pool}
 
     [Output Format]
-    You MUST return a JSON list of objects matching this exact structure:
+    Return a **JSON List** of objects. Do not include markdown code blocks.
+    
+    Example:
     [
+      {{
+        "question": "What is the meaning of '**brave**'?",
+        "choices": [
+          {{"content": "용감한", "is_correct": true}},
+          {{"content": "배고픈", "is_correct": false}},
+          {{"content": "졸린", "is_correct": false}},
+          {{"content": "사과", "is_correct": false}},
+          {{"content": "책상", "is_correct": false}}
+        ]
+      }},
       {{
         "question": "Who is the main character?",
         "choices": [
@@ -151,7 +175,6 @@ problem_prompt_template = PromptTemplate.from_template(
         ]
       }}
     ]
-    Do not include any markdown formatting (like ```json). Just return the raw JSON list.
     """
 )
 
@@ -324,7 +347,9 @@ async def story_problem(req: ProblemRequest):
         # 비동기 호출로 AI에 요청
         result = await problem_chain.ainvoke({
             "story_text" : req.story_text,
-            "num_questions" : req.num_questions
+            "num_questions" : req.num_questions,
+            "target_vocab": req.target_vocab,   
+            "distractor_pool": req.distractor_pool 
         })
 
         print(f"문제 len{(result)}개 생성 완료!")

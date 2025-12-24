@@ -8,7 +8,7 @@ import requests
 
 from .models import Story, StoryPage, Question, Choice
 from accounts.models import UserTracker
-from learning.models import StudySet
+from learning.models import StudySet, Voca, Meaning
 
 from .serializers import (
     StoryListSerializer, 
@@ -112,7 +112,7 @@ def story_list_create(request) :
                     genre=story_data.get('genre'),
                     keywords=story_data.get('keywords'),
                     story_level=story_data.get('story_level'),
-                    status='completed'
+                    status='normal'
                     )
 
                 pages_data = story_data.get('pages', [])
@@ -206,40 +206,67 @@ def story_question_list_create(request, story_id) :
         # 동화 본문 텍스트 가져오기
         pages = story.pages.all().order_by('page_number')
         if not pages.exists() :
-            return Response(
-                {'errors' : '동화 내용이 없습니다. 페이지를 생성해야 합니다.'},
-                status=status.HTTP_400_BAD_REQUEST
-                )
+            return Response({'errors': '동화 내용이 없습니다.'}, status=status.HTTP_400_BAD_REQUEST)
         
         full_story_text = " ".join([page.content_en for page in pages])
 
-        # AI 서버로 보낼 데이터 
-        num_questions = request.data.get('num_questions', 3)
+        # 퀴즈 개수 8개로 고정 (단어 5 + 내용 3)
+        num_questions = 8
 
+        # --- 단어 문제 생성을 위한 데이터 준비 (정답 및 오답 풀) ---
+        target_vocab_list = []
+        distractor_pool = []
+
+        try:
+            # 1. 정답 단어 준비 (StudySet이 있는 경우)
+            # 사용자가 '단어 포함'을 체크했다면 story.study_set이 존재함
+            if story.study_set:
+                vocas = story.study_set.vocas.all()
+                for v in vocas:
+                    # 해당 단어의 첫 번째 뜻을 정답으로 사용
+                    first_meaning = v.meanings.first()
+                    if first_meaning:
+                        target_vocab_list.append({
+                            "word": v.word,
+                            "meaning": first_meaning.content
+                        })
+            
+            # 2. 오답 보기(Distractor) 풀 준비 (DB의 실제 뜻 활용)
+            # 현재 학습 세트가 아닌 다른 단어들의 뜻을 가져와서 '자연스러운 오답'으로 사용
+            distractor_qs = Meaning.objects.all()
+            if story.study_set:
+                distractor_qs = distractor_qs.exclude(voca__study_set=story.study_set)
+            
+            # 무작위로 20개 정도 뽑아서 AI에게 전달 (오답 보기용)
+            # order_by('?')는 데이터가 아주 많으면 느릴 수 있지만, 현재 규모에선 가장 확실한 랜덤 방식
+            random_meanings = distractor_qs.order_by('?')[:20]
+            distractor_pool = [m.content for m in random_meanings]
+            
+        except Exception as e:
+            print(f"단어 데이터 준비 중 오류 (AI가 알아서 생성하도록 진행): {e}")
+
+
+        # AI 서버로 보낼 페이로드 (단어 정보 포함)
         ai_payload = {
-            "story_text" : full_story_text,
-            "num_questions" : num_questions
+            "story_text": full_story_text,
+            "num_questions": num_questions,
+            "target_vocab": target_vocab_list,   # [{"word": "apple", "meaning": "사과"}, ...]
+            "distractor_pool": distractor_pool   # ["책상", "하늘", "즐거운", ...]
         }
 
         response = None
-
         try : 
-            print(f"AI 서버로 문제 생성 요청 전송(텍스트 길이 : {(full_story_text)}")
+            print(f"AI 서버로 문제 생성 요청 (단어후보: {len(target_vocab_list)}개)")
 
-            # 문제 생성 요청보내기
             response = requests.post(f"{AI_SERVER_URL}/story-problem", json=ai_payload)
 
             if response.status_code != 200 :
-                print(f"문제 생성 실패 : {response.text}")
-                return Response(
-                    {'errors' : 'AI Question generation Failed', 'details' : response.text},
-                    status=status.HTTP_503_SERVICE_UNAVAILABLE
-                )
+                # 에러 처리
+                return Response({'errors': 'AI Error', 'details': response.text}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
             
             questions_data = response.json()
-            print(f"AI 문제 {len(questions_data)}개 생성 완료, DB 저장 시작..")
-
-            # DB 저장
+            
+            # DB 저장 로직 (기존과 동일)
             created_questions = []
             with transaction.atomic() : 
                 for q_item in questions_data : 
@@ -247,7 +274,6 @@ def story_question_list_create(request, story_id) :
                         story=story,
                         question=q_item.get('question')
                     )
-
                     choices_data = q_item.get('choices', [])
                     for c_item in choices_data:
                         Choice.objects.create(
@@ -256,20 +282,11 @@ def story_question_list_create(request, story_id) :
                             is_correct=c_item.get('is_correct')
                         )
                     created_questions.append(new_question)
-            
 
             return Response(QuestionSerializer(created_questions, many=True).data, status=status.HTTP_201_CREATED)
         
-        except requests.exceptions.RequestException as e:
-            
-            print(f"AI 서버 연결 오류: {e}")
-            return Response({'error': 'Cannot connect to AI service.'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
-        
         except Exception as e:
-            
-            print(f"서버 내부 오류: {e}")
-            import traceback
-            traceback.print_exc()
+            print(f"오류 발생: {e}")
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         
