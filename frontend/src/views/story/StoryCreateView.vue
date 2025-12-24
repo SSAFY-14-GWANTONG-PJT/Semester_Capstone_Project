@@ -1,7 +1,7 @@
 <template>
   <div class="story-container">
     <div class="card">
-      <h2 class="title">✨ 나만의 동화 만들기</h2>
+      <h2 class="title">동화 만들기 ✍🏻</h2>
       <p class="subtitle">어떤 이야기를 만들고 싶나요?</p>
 
       <div class="form-group">
@@ -20,26 +20,27 @@
           </div>
         </div>
         <div class="custom-genre-box">
-          <span class="small-label">직접 입력 👉</span>
+          <br>
+          <label>내가 찾는 장르가 없다면?</label>
           <input v-model="customGenre" type="text" class="mini-input" placeholder="직접 입력 (예: 탐정, 모험)" @input="selectedGenre = ''" />
         </div>
       </div>
 
       <div class="form-group">
-        <label>동화에 넣고 싶은 내용 📝</label>
+        <label>동화에 넣고 싶은 내용</label>
         <textarea v-model="userPrompt" class="story-input" placeholder="ex. 왕자, 공주, 여우, 악당, 마녀, 마법의 성, 숲속마을, 사랑, 전쟁..."></textarea>
       </div>
 
       <div class="form-group">
-        <label>단어 학습 포함 🤔</label>
+        <label>단어 학습 포함</label>
         <div class="toggle-group">
-          <button :class="['toggle-btn', { active: includeWord === true }]" @click="includeWord = true">🙆‍♀️ 네, 넣어주세요!</button>
-          <button :class="['toggle-btn', { active: includeWord === false }]" @click="includeWord = false">🙅‍♂️ 아니요, 괜찮아요!</button>
+          <button :class="['toggle-btn', { active: includeWord === true }]" @click="includeWord = true">❤️ 네, 넣어주세요!</button>
+          <button :class="['toggle-btn', { active: includeWord === false }]" @click="includeWord = false">❌ 아니요, 괜찮아요!</button>
         </div>
       </div>
 
       <button @click="createStory" class="btn btn-primary full-width" :disabled="isLoading">
-        {{ isLoading ? '작가님이 글 쓰는 중...' : '이야기 만들기 🚀' }}
+        {{ isLoading ? '작가님이 글 쓰는 중...' : '이야기 만들기' }}
       </button>
     </div>
 
