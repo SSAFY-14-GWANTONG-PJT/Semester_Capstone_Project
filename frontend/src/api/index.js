@@ -4,7 +4,11 @@ import router from '@/router'
 
 // 1. 독립된 axios 인스턴스 생성
 const instance = axios.create({
-  baseURL: 'http://localhost:8000'
+  // 현재 접속 도메인 기준으로
+  baseURL: import.meta.env.VITE_API_URL || '/api',
+  headers: {
+    'Content-Type' : 'application/json'
+  }
 })
 
 // 2. [요청 인터셉터] 모든 요청 직전에 실행
