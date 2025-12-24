@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Post, Comment, LikePost
+from story.models import Story
 
 class PostSerializer(serializers.ModelSerializer):
     user_nickname = serializers.ReadOnlyField(source='user.nickname')
@@ -46,3 +47,10 @@ class CommentSerializer(serializers.ModelSerializer):
         model = Comment
         fields = '__all__'
         read_only_fields = ['user', 'post']
+
+class UserStoryAllSerializer(serializers.ModelSerializer):
+    user_nickname = serializers.ReadOnlyField(source='author.nickname')
+
+    class Meta:
+        model = Story
+        fields = '__all__'

@@ -60,20 +60,45 @@
                             <div class="form-group">
                                 <label for="password">비밀번호</label>
                                 <div class="input-wrapper">
-                                    <input type="password" id="password" placeholder="8자 이상 입력해주세요" required v-model="signUpForm.password">
+                                    <input type="password" v-model="signUpForm.password" placeholder="8자 이상 입력해주세요">
                                     <i class="fas fa-lock input-icon"></i>
                                 </div>
-                                <div class="password-strength" id="passwordStrength">
-                                    <div class="password-strength-bar" id="strengthBar"></div>
+
+                                <div v-if="signUpForm.password" class="strength-info">
+                                    <p class="strength-status">
+                                        강도체크 : <span :style="{ color: strengthColor }">{{ strengthLabel }}</span>
+                                    </p>
+                                    
+                                    <div class="bar-container">
+                                        <div class="bar-fill" :style="{ width: (passwordScore / 4) * 100 + '%', backgroundColor: strengthColor }"></div>
+                                    </div>
+
+                                    <ul class="check-list">
+                                        <li :class="{ 'active': signUpForm.password.length >= 8 }">✔ 8자 이상</li>
+                                        <li :class="{ 'active': /[a-z]/.test(signUpForm.password) && /[A-Z]/.test(signUpForm.password) }">✔ 대소문자 포함</li>
+                                        <li :class="{ 'active': /\d/.test(signUpForm.password) }">✔ 숫자 포함</li>
+                                        <li :class="{ 'active': /[^a-zA-Z\d]/.test(signUpForm.password) }">✔ 특수문자 포함</li>
+                                    </ul>
                                 </div>
                             </div>
 
                             <div class="form-group">
                                 <label for="passwordConfirm">비밀번호 확인</label>
                                 <div class="input-wrapper">
-                                    <input type="password" id="passwordConfirm" placeholder="비밀번호를 다시 입력해주세요" required>
+                                    <input 
+                                        type="password" 
+                                        id="passwordConfirm" 
+                                        placeholder="비밀번호를 다시 입력해주세요" 
+                                        required
+                                        v-model="signUpForm.passwordConfirm"
+                                        :class="{ 'input-error': !isPasswordMatch }"
+                                    >
                                     <i class="fas fa-check-circle input-icon"></i>
                                 </div>
+                                
+                                <p v-if="!isPasswordMatch" class="error-msg">
+                                    ⚠️ 비밀번호와 다릅니다.
+                                </p>
                             </div>
 
                             <div class="terms">
@@ -116,7 +141,7 @@
 </template>
 
 <script setup>
-import {reactive, onMounted, onUnmounted} from'vue'
+import {reactive, onMounted, onUnmounted, computed} from'vue'
 import {useRouter} from 'vue-router'
 import { useCounterStore } from '@/stores/counter'
 import axios from '@/api/index.js'
@@ -128,6 +153,7 @@ const signUpForm = reactive({
     nickname: '',
     email: '',
     password: '',
+    passwordConfirm: '',
     age: 0,
     level: 0,
 })
@@ -135,6 +161,11 @@ const signUpForm = reactive({
 const signUpHandler = async () => {
     if (!signUpForm.nickname || !signUpForm.email || !signUpForm.password || !signUpForm.age) {
         alert("비어있는 항목을 채워주세요.")
+        return;
+    }
+
+    if (signUpForm.password !== signUpForm.passwordConfirm) {
+        alert("비밀번호가 서로 일치하지 않습니다. 다시 확인해주세요. 🔒");
         return;
     }
 
@@ -172,6 +203,37 @@ function createParticle(x, y) {
     setTimeout(() => particle.remove(), 1000);
 }
 
+// 1. 비밀번호 강도 점수 계산
+const passwordScore = computed(() => {
+    const pw = signUpForm.password;
+    if (!pw) return 0;
+
+    let score = 0;
+    if (pw.length >= 8) score++;                   // 1점: 8자 이상
+    if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) score++; // 1점: 대소문자 혼합
+    if (/\d/.test(pw)) score++;                    // 1점: 숫자 포함
+    if (/[^a-zA-Z\d]/.test(pw)) score++;           // 1점: 특수문자 포함
+    
+    return score; // 총 0~4점
+});
+
+// 3. 점수에 따른 상태값들 (화면에 바로 사용)
+const strengthLabel = computed(() => {
+    const labels = ['위험 ❌', '약함 ⚠️', '보통 🙂', '강함 ✨', '최고 👍'];
+    return labels[passwordScore.value];
+});
+
+const strengthColor = computed(() => {
+    const colors = ['#E5E5E5', '#FF6B9D', '#FF9600', '#CE82FF', '#58CC02'];
+    return colors[passwordScore.value];
+});
+
+// 2. 비밀번호 일치 여부 확인 
+const isPasswordMatch = computed(() => {
+    if (!signUpForm.passwordConfirm) return true; 
+    return signUpForm.password === signUpForm.passwordConfirm;
+})
+
 onMounted(() => {
     // 클릭 이벤트 (파티클)
     document.addEventListener('click', (e) => {
@@ -197,38 +259,6 @@ onMounted(() => {
                     const y = e.clientY + Math.sin(angle) * distance;
                     createParticle(x, y);
                 }, i * 25);
-            }
-        });
-    }
-
-    // 비밀번호 강도 체크
-    const passwordInput = document.getElementById('password');
-    const strengthIndicator = document.getElementById('passwordStrength');
-    const strengthBar = document.getElementById('strengthBar');
-
-    if (passwordInput && strengthIndicator && strengthBar) {
-        passwordInput.addEventListener('input', function() {
-            const password = this.value;
-            strengthIndicator.classList.add('show');
-
-            if (password.length === 0) {
-                strengthIndicator.classList.remove('show');
-                return;
-            }
-
-            let strength = 0;
-            if (password.length >= 8) strength++;
-            if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
-            if (/\d/.test(password)) strength++;
-            if (/[^a-zA-Z\d]/.test(password)) strength++;
-
-            strengthBar.className = 'password-strength-bar';
-            if (strength <= 1) {
-                strengthBar.classList.add('weak');
-            } else if (strength <= 2) {
-                strengthBar.classList.add('medium');
-            } else {
-                strengthBar.classList.add('strong');
             }
         });
     }
@@ -271,50 +301,6 @@ onMounted(() => {
         });
     });
 
-    // 폼 제출
-    // const signupForm = document.getElementById('signupForm');
-    // if (signupForm) {
-    //     signupForm.addEventListener('submit', (e) => {
-    //         e.preventDefault();
-            
-    //         const requiredAgree = document.querySelectorAll('.agree-item[required]');
-    //         const allAgreed = Array.from(requiredAgree).every(item => item.checked);
-            
-    //         if (!allAgreed) {
-    //             alert('필수 약관에 모두 동의해주세요! 📝');
-    //             return;
-    //         }
-
-    //         const password = document.getElementById('password').value;
-    //         const passwordConfirm = document.getElementById('passwordConfirm').value;
-            
-    //         if (password !== passwordConfirm) {
-    //             alert('비밀번호가 일치하지 않습니다! 🔒');
-    //             return;
-    //         }
-
-    //         const btn = e.target.querySelector('.btn-primary');
-    //         btn.textContent = '가입 중... 🚀';
-    //         btn.style.background = 'linear-gradient(135deg, var(--secondary-light), var(--secondary))';
-            
-    //         for (let i = 0; i < 30; i++) {
-    //             setTimeout(() => {
-    //                 const x = Math.random() * window.innerWidth;
-    //                 const y = Math.random() * window.innerHeight;
-    //                 createParticle(x, y);
-    //             }, i * 50);
-    //         }
-
-    //         setTimeout(() => {
-    //             btn.textContent = '가입 완료! ✨';
-    //             btn.style.background = 'linear-gradient(135deg, var(--primary-light), var(--primary))';
-                
-    //             setTimeout(() => {
-    //                 router.push('/');
-    //             }, 1500);
-    //         }, 2000);
-    //     });
-    // }
 });
 </script>
 
@@ -691,29 +677,38 @@ input:focus + .input-icon, select:focus + .input-icon {
     display: inline-block;
 }
 
-/* 비밀번호 강도 */
-.password-strength {
-    margin-top: 8px;
-    height: 4px;
-    background: #E5E5E5;
-    border-radius: 2px;
+/* 비밀번호 강도 체크 */
+.strength-info { margin-top: 10px; }
+.strength-status { font-size: 0.9rem; font-weight: bold; margin-bottom: 5px; }
+
+.bar-container {
+    width: 100%;
+    height: 6px;
+    background: #eee;
+    border-radius: 3px;
     overflow: hidden;
-    opacity: 0;
-    transition: opacity 0.3s;
+    margin-bottom: 8px;
 }
 
-.password-strength.show { opacity: 1; }
-
-.password-strength-bar {
+.bar-fill {
     height: 100%;
-    width: 0;
-    transition: all 0.3s;
-    border-radius: 2px;
+    transition: all 0.3s ease; /* 부드럽게 늘어나도록 */
 }
 
-.password-strength-bar.weak { width: 33%; background: var(--pink); }
-.password-strength-bar.medium { width: 66%; background: var(--orange); }
-.password-strength-bar.strong { width: 100%; background: var(--primary); }
+.check-list {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    gap: 10px;
+    font-size: 0.75rem;
+    color: #ccc;
+}
+
+/* 조건 충족 시 색상 변경 */
+.check-list li.active {
+    color: var(--purple);
+    font-weight: bold;
+}
 
 /* 파티클 */
 .particle {
@@ -733,12 +728,26 @@ input:focus + .input-icon, select:focus + .input-icon {
     100% { opacity: 0; transform: translateY(-100px) scale(0.5) rotate(360deg); }
 }
 
-/* 모바일 대응 */
-@media (max-width: 768px) {
-    .nav-links { display: none; }
-    .signup-box { padding: 40px 25px; }
-    .form-row { grid-template-columns: 1fr; }
-    input, select { padding: 14px 16px 14px 45px; }
-    .btn-group { flex-direction: column; }
+/* 에러 메시지 스타일 */
+.error-msg {
+    color: #ff4d4d; /* 밝은 빨간색 */
+    font-size: 0.8rem;
+    font-weight: 700;
+    margin-top: 5px;
+    margin-left: 5px;
+    animation: shake 0.3s ease-in-out; /* 살짝 흔들리는 효과 */
+}
+
+/* 에러 발생 시 입력창 테두리 */
+input.input-error {
+    border-color: #ff4d4d !important;
+    box-shadow: 0 0 10px rgba(255, 77, 77, 0.1);
+}
+
+/* 흔들리는 애니메이션 */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
 }
 </style>

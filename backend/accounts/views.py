@@ -1,6 +1,6 @@
 # JWT 기반의 로그인
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializers import MyTokenObtainPairSerializer, UserStorySerializer, UserStoryAllSeializer
+from .serializers import MyTokenObtainPairSerializer, UserStorySerializer, SignUpSerializer, ProfileUpdateSerializer
 
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
@@ -10,7 +10,6 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import SignUpSerializer, ProfileUpdateSerializer
 
 from .models import UserTracker
 from django.contrib.auth import get_user_model
@@ -36,7 +35,7 @@ def signup(request):
 
 # 회원탈퇴
 from rest_framework.decorators import permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -87,19 +86,34 @@ def profileEdit(request):
 
 
 # 내가 쓴 스토리 가져오기
+from rest_framework.pagination import PageNumberPagination
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def getStory(request):
+@permission_classes([IsAuthenticatedOrReadOnly])
+def getMyStories(request):
     user = request.user
-    stories = user.stories.all()
+    # 1. 사용자의 모든 동화를 가져오고 정렬 (최신순 등)
+    stories = user.stories.all().order_by('-created_at')
+
+    # 2. 프론트엔드에서 전체 데이터를 원하는지 확인 (?no_pagination=true)
+    no_pagination = request.query_params.get('no_pagination', 'false')
+
+    if no_pagination == 'true':
+        # 전체 데이터를 한 번에 반환 (Vue에서 실시간 검색/페이지네이션 처리용)
+        serializer = UserStorySerializer(stories, many=True)
+        return Response(serializer.data, status=200)
+
+    # 3. 기본값은 페이지네이션 처리 (일반적인 API 응답 방식)
+    paginator = PageNumberPagination()
+    # settings.py에 설정된 PAGE_SIZE(6개)를 따릅니다.
+    page = paginator.paginate_queryset(stories, request)
+    
+    if page is not None:
+        serializer = UserStorySerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
+
+    # 예외 케이스: 페이지네이션이 적용되지 않았을 때
     serializer = UserStorySerializer(stories, many=True)
     return Response(serializer.data, status=200)
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def getAllStories(request):
-    user = request.user
-    stories = user.stories.all()
-    serializer = UserStoryAllSeializer(stories, many=True)
-    return Response(serializer.data, status=200)
+# 모든 스토리 가져오기

@@ -149,14 +149,23 @@ onMounted(async () => {
 const stories = ref([])
 onMounted(async () => {
   try {
-    const response = await axios.get('/api/accounts/profile/story/')
-    stories.value = response.data
+    // 1. 전체 데이터를 가져오기 위해 파라미터 추가
+    const response = await axios.get('/api/accounts/profile/stories/', {
+      params: { no_pagination: 'true' }
+    })
+
+    stories.value = Array.isArray(response.data) 
+                    ? response.data 
+                    : (response.data.results || [])
+    
   } catch (error) {
     console.error("동화 리스트 가져오기 실패:", error)
   }
 })
 
 const latestStories = computed(() => {
+  if (!stories.value || stories.value.length === 0) return []
+
   const sorted = [...stories.value].sort((a, b) => {
     return new Date(b.created_at) - new Date(a.created_at)
   })

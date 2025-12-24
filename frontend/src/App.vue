@@ -50,8 +50,9 @@ const logoutHandler = async () => {
         <nav class="nav-links">
           <div class="menu-items">
             <RouterLink to="/" class="menu1">홈</RouterLink>
-            <RouterLink :to="{name: 'community'}" class="menu2">커뮤니티</RouterLink>
-            <RouterLink :to="{name: 'today-learning'}" class="menu3">오늘의 학습</RouterLink>
+            <RouterLink :to="{name: 'community'}" class="menu2">자유게시판</RouterLink>
+            <RouterLink :to="{name: 'story-community'}" class="menu3">동화 도서관</RouterLink>
+            <RouterLink :to="{name: 'today-learning'}" class="menu4">오늘의 학습</RouterLink>
           </div>
 
           <div class="nav-auth-section">
@@ -73,7 +74,6 @@ const logoutHandler = async () => {
                 </div>
               </div>
             </div>
-            <RouterLink to="/story/create" class="btn-start-nav">시작하기</RouterLink>
           </div>
         </nav>
       </div>
@@ -295,7 +295,8 @@ header {
 
 .menu1:hover,
 .menu2:hover,
-.menu3:hover {
+.menu3:hover,
+.menu4:hover {
   /* 호버 시 빨간색으로 변경 */
     color: #0ead1b; 
     

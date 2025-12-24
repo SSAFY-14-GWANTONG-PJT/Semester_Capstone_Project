@@ -153,8 +153,7 @@ const publishStory = async (isPublic) => {
     
     alert(isPublic ? '커뮤니티에 등록되었습니다! 🎈' : '내 서재에 저장되었습니다! 📚')
     
-    if(isPublic) router.push('/community')
-    else router.push('/')
+    router.push('/mypage/stories')
     
   } catch (error) {
     console.error('상태 업데이트 실패:', error)

@@ -15,8 +15,8 @@
             <div class="container">
                 <div class="board-header">
                     <div class="page-title">
-                        <h1>자유게시판 🌳</h1>
-                        <p>친구들과 자유롭게 이야기를 나눠보세요!</p>
+                        <h1>동화 도서관 📚</h1>
+                        <p>친구들과 자유롭게 동화를 공유해보세요!</p>
                     </div>
                     <div class="search-wrapper">
                         <input 
@@ -29,7 +29,7 @@
                 </div>
 
                 <div class="category-tabs">
-                    <button class="tab-btn" title="글 쓰기" @click="goToCreate">✨ 글쓰기 ✨</button>
+                    <button class="tab-btn" title="동화 만들기" @click="goToCreate">✨ 동화 만들기 ✨</button>
                 </div>
 
                 <div v-if="loading" class="loading-area">
@@ -59,7 +59,6 @@
 
                             <div class="card-body">
                                 <h3 class="card-title">{{ post.title }}</h3>
-                                <p class="card-excerpt">{{ post.content }}</p>
                                 
                                 <div class="card-footer">
                                     <div class="author">
@@ -68,7 +67,6 @@
                                     </div>
                                     <div class="stats">
                                         <span class="stat-item likes"><i class="fas fa-heart"></i> {{ post.like_count || 0 }}</span>
-                                        <span class="stat-item comments"><i class="fas fa-comment"></i> {{ post.comment_count || 0 }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -106,7 +104,7 @@
             </div>
         </section>
 
-        <button class="write-btn" title="새 글 쓰기" @click="goToCreate">
+        <button class="write-btn" title="동화 만들기" @click="goToCreate">
             <i class="fas fa-pen"></i>
         </button>
     </div>
@@ -169,12 +167,12 @@ const pagedPosts = computed(() => {
 const fetchPosts = async () => {
     loading.value = true
     try {
-        const res = await axios.get(`/api/community/posts/`, {
+        const res = await axios.get(`/api/accounts/profile/stories/`, {
             params: { no_pagination: 'true' } // 백엔드 수정 사항과 일치시킴
         })
         allPosts.value = Array.isArray(res.data) ? res.data : res.data.results;
     } catch (error) {
-        console.error("데이터 로드 실패:", error)
+        console.error("동화 로드 실패:", error)
     } finally {
         loading.value = false
     }
@@ -193,14 +191,14 @@ const changePage = (page) => {
 };
 // 상세 페이지 이동
 const goDetail = (id) => {
-    router.push(`/community/${id}`)
+    router.push(`/story/read/${id}`)
 }
 
 const goToCreate = () => {
-    router.push('/community/create')
+    router.push('/story/create')
 }
 
-// 썸네일 스타일 (게시글은 썸네일이 없을 수 있음)
+// 썸네일 스타일 
 const getCardHeaderStyle = (thumbnail) => {
     if (thumbnail) {
         let imageUrl = thumbnail;

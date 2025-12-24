@@ -11,42 +11,83 @@ from .serializers import PostSerializer, CommentSerializer
 
 from rest_framework.pagination import PageNumberPagination
 
+# 게시글 목록 - 페이지네이션
+# @api_view(['GET', 'POST'])
+# @permission_classes([IsAuthenticatedOrReadOnly])
+# def post_list_create(request):
+#     # 게시글 목록 조회
+#     if request.method == 'GET':
+#         qs = Post.objects.all()
+
+#         # ?status= 로 필터
+#         status_param = request.query_params.get('status')
+#         if status_param:
+#             qs = qs.filter(status=status_param)
+
+#         # ?sort= 로 정렬
+#         sort_param = request.query_params.get('sort', '-created_at')
+#         qs = qs.order_by(sort_param)
+
+#         # 페이지네이션 처리 시작
+#         paginator = PageNumberPagination()
+
+#         page = paginator.paginate_queryset(qs, request)
+#         if page is not None:
+#             serializer = PostSerializer(page, many=True, context={'request': request})
+#             # get_paginated_response는 count, next, previous, results가 포함된 Response를 반환합니다.
+#             return paginator.get_paginated_response(serializer.data)
+        
+#         # 전체 반환, 차후 pagination
+#         serializer = PostSerializer(qs, many=True, context={'request': request})
+#         return Response(serializer.data, status=status.HTTP_200_OK)
+
+#     serializer = PostSerializer(data=request.data, context={'request': request})
+#     if serializer.is_valid():
+#         # user는 request.user로 강제 세팅
+#         serializer.save(user=request.user)
+#         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+#     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticatedOrReadOnly])
 def post_list_create(request):
-    # 게시글 목록 조회
     if request.method == 'GET':
         qs = Post.objects.all()
-
-        # ?status= 로 필터
+        
         status_param = request.query_params.get('status')
         if status_param:
             qs = qs.filter(status=status_param)
 
-        # ?sort= 로 정렬
         sort_param = request.query_params.get('sort', '-created_at')
         qs = qs.order_by(sort_param)
 
-        # 페이지네이션 처리 시작
-        paginator = PageNumberPagination()
+        # [2] 페이지네이션 우회 로직 추가
+        # 프론트에서 ?no_pagination=true 라고 보내면 전체를 반환합니다.
+        no_pagination = request.query_params.get('no_pagination')
 
+        if no_pagination == 'true':
+            serializer = PostSerializer(qs, many=True, context={'request': request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        # [3] 기본 페이지네이션 처리 (기존과 동일)
+        paginator = PageNumberPagination()
         page = paginator.paginate_queryset(qs, request)
         if page is not None:
             serializer = PostSerializer(page, many=True, context={'request': request})
-            # get_paginated_response는 count, next, previous, results가 포함된 Response를 반환합니다.
             return paginator.get_paginated_response(serializer.data)
         
-        # 전체 반환, 차후 pagination
+        # 페이지네이션이 설정되지 않았을 경우의 기본 반환
         serializer = PostSerializer(qs, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    serializer = PostSerializer(data=request.data, context={'request': request})
-    if serializer.is_valid():
-        # user는 request.user로 강제 세팅
-        serializer.save(user=request.user)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    # POST 로직 (기존과 동일)
+    elif request.method == 'POST':
+        serializer = PostSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET', 'PUT', 'DELETE'])
 @permission_classes([IsAuthenticatedOrReadOnly])
@@ -192,3 +233,34 @@ def comment_like_toggle(request, comment_id):
         },
         status=status.HTTP_200_OK
     )
+
+from story.models import Story
+from .serializers import UserStoryAllSerializer
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticatedOrReadOnly]) # 로그인 안 해도 도서관 구경은 가능하도록 변경
+def getAllStories(request):
+    # 1. 모든 동화를 가져오되, 보통 '공개(open)'된 동화만 목록에 보여주는 것이 정석입니다.
+    # 만약 정말로 비공개글까지 모든 유저에게 보여주려면 .all()을 유지하세요.
+    stories = Story.objects.filter(status='open').order_by('-created_at')
+
+    # 2. 프론트엔드에서 전체 데이터를 원하는지 확인 (?no_pagination=true)
+    no_pagination = request.query_params.get('no_pagination', 'false')
+
+    if no_pagination == 'true':
+        # [최적화] select_related나 prefetch_related를 쓰면 속도가 훨씬 빨라집니다.
+        # 유저 닉네임 등을 가져온다면 .select_related('user')를 추가하세요.
+        serializer = UserStoryAllSerializer(stories, many=True, context={'request': request})
+        return Response(serializer.data, status=200)
+
+    # 3. 기본값은 페이지네이션 처리
+    paginator = PageNumberPagination()
+    page = paginator.paginate_queryset(stories, request)
+    
+    if page is not None:
+        serializer = UserStoryAllSerializer(page, many=True, context={'request': request})
+        return paginator.get_paginated_response(serializer.data)
+
+    # 예외 케이스
+    serializer = UserStoryAllSerializer(stories, many=True, context={'request': request})
+    return Response(serializer.data, status=200)

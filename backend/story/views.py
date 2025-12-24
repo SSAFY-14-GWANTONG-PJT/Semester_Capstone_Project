@@ -79,7 +79,7 @@ def story_list_create(request) :
                 genre=story_data.get('genre'),
                 keywords=story_data.get('keywords'),
                 story_level=story_data.get('story_level'),
-                status='completed'
+                status='normal'
             )
 
             pages_data = story_data.get('pages', [])
