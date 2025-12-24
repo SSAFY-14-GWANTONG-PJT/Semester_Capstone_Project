@@ -1,28 +1,38 @@
 <template>
   <div class="story-container">
     <div class="card">
-      <h2 class="title">동화 만들기 ✍🏻</h2>
+      <h2 class="title">동화 만들기</h2>
       <p class="subtitle">어떤 이야기를 만들고 싶나요?</p>
 
       <div class="form-group">
         <label>장르를 골라주세요 🎭</label>
-        <div class="genre-scroll-wrapper">
-          <div class="genre-row">
-            <button 
-              v-for="g in genres" 
-              :key="g.value"
-              :class="['genre-btn', { active: selectedGenre === g.value && !customGenre }]"
-              @click="selectGenre(g.value)"
-            >
-              <span class="genre-icon">{{ g.icon }}</span>
-              <span class="genre-text">{{ g.label }}</span>
-            </button>
-          </div>
+        
+        <div class="genre-grid">
+          <button 
+            v-for="g in genres" 
+            :key="g.value"
+            :class="['genre-card', { active: selectedGenre === g.value && !customGenre }]"
+            @click="selectGenre(g.value)"
+          >
+            <div class="icon-wrapper">{{ g.icon }}</div>
+            <span class="genre-label">{{ g.label }}</span>
+            
+            <div v-if="selectedGenre === g.value && !customGenre" class="check-mark">✔</div>
+          </button>
         </div>
+
         <div class="custom-genre-box">
-          <br>
-          <label>내가 찾는 장르가 없다면?</label>
-          <input v-model="customGenre" type="text" class="mini-input" placeholder="직접 입력 (예: 탐정, 모험)" @input="selectedGenre = ''" />
+          <p class="custom-label">원하는 장르가 없나요?</p>
+          <div class="input-wrapper">
+            <input 
+              v-model="customGenre" 
+              type="text" 
+              class="modern-input" 
+              placeholder="직접 입력해보세요! (예: 모험, 스릴러, 소년 전기)" 
+              @input="selectedGenre = ''" 
+            />
+            <span class="input-icon">✍🏻</span>
+          </div>
         </div>
       </div>
 
@@ -352,15 +362,153 @@ input::placeholder, textarea::placeholder {
 .form-group label { display: block; font-weight: 800; margin-bottom: 12px; color: #333; font-size: 1.1rem; }
 
 /* 장르 버튼 */
-.genre-row { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; }
-.genre-btn { 
-  display: flex; flex-direction: column; align-items: center; justify-content: center; 
-  min-width: 90px; height: 95px; border: 2px solid #E5E5E5; border-radius: 20px; 
-  background: white; cursor: pointer; transition: 0.2s; color: #666;
+.genre-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); /* 반응형 그리드 */
+  gap: 15px;
+  margin-bottom: 25px;
 }
-.genre-btn.active { border-color: #1CB0F6; background: #E0F2FE; color: #1CB0F6; box-shadow: 0 4px 10px rgba(28, 176, 246, 0.2); }
-.genre-icon { font-size: 2.4rem !important; margin-bottom: 5px; }
-.genre-text { font-size: 1rem; font-weight: 800; }
+
+.genre-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1 / 1; /* 정사각형 비율 유지 */
+  background: #FFFFFF;
+  border: 2px solid #F0F0F0;
+  border-radius: 24px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+  overflow: hidden;
+}
+
+/* 호버 효과 */
+.genre-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+  border-color: #FFD54F;
+}
+
+/* 활성화(클릭) 상태 - 테마색(Coral) 적용 */
+.genre-card.active {
+  border-color: #FF6B6B;
+  background-color: #FFF5F5;
+  box-shadow: 0 8px 15px rgba(255, 107, 107, 0.2);
+  transform: scale(1.05);
+}
+
+.icon-wrapper {
+  font-size: 2.5rem;
+  margin-bottom: 8px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+  transition: transform 0.3s ease;
+}
+
+.genre-card.active .icon-wrapper {
+  transform: scale(1.1);
+}
+
+.genre-label {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #888;
+  transition: color 0.3s;
+}
+
+.genre-card.active .genre-label {
+  color: #FF6B6B;
+}
+
+/* 우측 상단 체크 표시 */
+.check-mark {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 20px;
+  height: 20px;
+  background-color: #FF6B6B;
+  color: white;
+  border-radius: 50%;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  box-shadow: 0 2px 5px rgba(255, 107, 107, 0.4);
+  animation: popIn 0.3s ease;
+}
+
+@keyframes popIn {
+  0% { transform: scale(0); }
+  80% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+/* --- [커스텀 입력창 스타일 개선] --- */
+.custom-genre-box {
+  background: #F9FAFB;
+  padding: 15px 20px;
+  border-radius: 20px;
+  border: 1px solid #EEE;
+}
+
+.custom-label {
+  font-size: 0.9rem;
+  color: #888;
+  margin-bottom: 8px;
+  font-weight: 700;
+  margin-left: 5px;
+}
+
+.input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.modern-input {
+  width: 100%;
+  padding: 14px 20px;
+  padding-right: 45px; /* 아이콘 공간 확보 */
+  border: 2px solid #E0E0E0;
+  border-radius: 16px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #333;
+  background: white;
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.modern-input:focus {
+  border-color: #FF6B6B;
+  box-shadow: 0 0 0 4px rgba(255, 107, 107, 0.1);
+}
+
+.input-icon {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.2rem;
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+/* 반응형 처리: 화면이 작을 때 */
+@media (max-width: 480px) {
+  .genre-grid {
+    grid-template-columns: repeat(3, 1fr); /* 모바일에서는 3열 */
+    gap: 10px;
+  }
+  .genre-card {
+    border-radius: 18px;
+  }
+  .icon-wrapper { font-size: 2rem; }
+  .genre-label { font-size: 0.85rem; }
+}
 
 .mini-input { width: 100%; padding: 10px; border: 2px solid #E5E5E5; border-radius: 12px; margin-top: 10px; outline: none; }
 .story-input { width: 100%; height: 100px; padding: 15px; border: 3px solid #E5E5E5; border-radius: 20px; resize: none; outline: none; font-size: 1rem; }
