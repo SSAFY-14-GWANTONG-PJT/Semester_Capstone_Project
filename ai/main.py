@@ -111,6 +111,8 @@ story_prompt_template = PromptTemplate.from_template(
     [Vocabulary Instructions]
     - **Target Vocabulary Words**: {vocab_words}
     - Include these vocabulary words naturally in the English text.
+    - **IMPORTANT**: When you use a word from the Target Vocabulary list, you MUST wrap it in double asterisks to highlight it (e.g., if the word is 'apple', write '**apple**').
+    - Try to include as many words from the list as possible, but do not overuse them if it ruins the story flow. Natural storytelling is the priority.
 
     [Inputs]
     - Age: {age}
@@ -206,14 +208,12 @@ async def generate_image_for_page(text: str, index: int, max_retries=2) -> Story
             if attempt < max_retries - 1:
                 await asyncio.sleep(2)
     
-    # [수정됨] StoryPageResponse의 필수 필드를 모두 채워서 반환
     return StoryPageResponse(
         page_number=index + 1,
-        content_en=text,       # 필드명 수정 (content -> content_en)
-        content_kr="",         # 필수 필드이므로 빈 문자열이라도 추가 (나중에 generate_story에서 덮어씀)
+        content_en=text,
+        content_kr="",
         image_data=img_base64
     )
-
 
 
 @app.get("/")
@@ -237,7 +237,6 @@ def list_available_models():
         return {"models": [model.name for model in models]}
     except Exception as e:
         return {"error": str(e)}
-
 
 # 동화 생성 api 요청 & 함수
 @app.post("/generate-story", response_model=StoryResponse)
@@ -387,137 +386,3 @@ async def generate_tts(req: TTSRequest):
     except Exception as e:
         print(f"TTS 생성 중 에러 발생: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-    
-    
-    
-    
-# 미사용
-
-
-# 동화 확인 API
-# @app.get("/preview-story", response_class=HTMLResponse)
-# async def preview_story():
-#     """
-#     마지막 생성된 동화를 HTML로 미리보기
-#     """
-#     if not hasattr(app.state, 'last_story') or not app.state.last_story:
-#         return "<h1>No story generated yet. Please generate a story first.</h1>"
-    
-#     story = app.state.last_story
-    
-#     html_content = f"""
-#     <!DOCTYPE html>
-#     <html>
-#     <head>
-#         <meta charset="UTF-8">
-#         <title>{story['title']}</title>
-#         <style>
-#             body {{
-#                 font-family: 'Comic Sans MS', cursive, sans-serif;
-#                 max-width: 800px;
-#                 margin: 0 auto;
-#                 padding: 20px;
-#                 background: linear-gradient(to bottom, #87CEEB, #98FB98);
-#             }}
-#             h1 {{
-#                 text-align: center;
-#                 color: #FF6B6B;
-#                 text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-#             }}
-#             .summary {{
-#                 background: #FFFACD;
-#                 padding: 15px;
-#                 border-radius: 10px;
-#                 margin-bottom: 20px;
-#                 border: 2px dashed #FFD700;
-#             }}
-#             .page {{
-#                 background: white;
-#                 border-radius: 15px;
-#                 padding: 20px;
-#                 margin: 20px 0;
-#                 box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-#             }}
-#             .page-number {{
-#                 color: #666;
-#                 font-weight: bold;
-#                 margin-bottom: 10px;
-#             }}
-#             .text {{
-#                 line-height: 1.8;
-#                 color: #333;
-#                 margin: 15px 0;
-#             }}
-#             .image {{
-#                 width: 100%;
-#                 max-width: 512px;
-#                 height: auto;
-#                 border-radius: 10px;
-#                 margin: 15px auto;
-#                 display: block;
-#                 box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-#             }}
-#             .no-image {{
-#                 background: #f0f0f0;
-#                 padding: 40px;
-#                 text-align: center;
-#                 color: #999;
-#                 border-radius: 10px;
-#             }}
-#         </style>
-#     </head>
-#     <body>
-#         <h1>📚 {story['title']} 📚</h1>
-#         <div class="summary">
-#             <strong>Summary:</strong> {story['summary']}
-#         </div>
-#         <p style="text-align: center; color: #666;">Genre: {story['genre']} | Level: {story['story_level']}</p>
-#     """
-    
-#     for page in story['pages']:
-#         # Pydantic model이 dump된 상태이므로 dict로 접근
-#         # page_no가 ERD의 page_number로 변경됨
-#         page_num = page.get('page_number')
-#         content = page.get('content')
-#         image_data = page.get('image_data')
-
-#         html_content += f"""
-#         <div class="page">
-#             <div class="page-number">📖 Page {page_num}</div>
-#             <div class="text">{content}</div>
-#         """
-        
-#         if image_data:
-#             html_content += f"""
-#             <img class="image" src="data:image/png;base64,{image_data}" alt="Page illustration">
-#             """
-#         else:
-#             html_content += """
-#             <div class="no-image">🎨 Image generation failed</div>
-#             """
-        
-#         html_content += "</div>"
-    
-#     html_content += """
-#     </body>
-#     </html>
-#     """
-    
-#     return html_content
-
-
-# 동화 그림 확인 API
-# @app.get("/preview-image/{page_no}", response_class=Response)
-# async def preview_single_image(page_no: int):
-#     if not hasattr(app.state, 'last_story') or not app.state.last_story:
-#         raise HTTPException(status_code=404, detail="No story found")
-    
-#     story = app.state.last_story
-#     # page_number로 검색
-#     page = next((p for p in story['pages'] if p['page_number'] == page_no), None)
-    
-#     if not page or not page['image_data']:
-#         raise HTTPException(status_code=404, detail="Image not found")
-    
-#     image_bytes = base64.b64decode(page['image_data'])
-#     return Response(content=image_bytes, media_type="image/png")

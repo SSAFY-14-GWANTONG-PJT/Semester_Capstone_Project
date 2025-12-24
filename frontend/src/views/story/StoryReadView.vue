@@ -17,8 +17,7 @@
         <div class="text-box">
           <span class="page-indicator">Page {{ pageIndex + 1 }} / {{ pages.length }}</span>
 
-          <p class="english-text">
-            {{ isKoreanMode ? currentPage.content_ko : currentPage.content_en }}
+          <p class="english-text" v-html="highlightContent(isKoreanMode ? currentPage.content_ko : currentPage.content_en)">
           </p>
           
           <button class="btn-translate" @click="isKoreanMode = !isKoreanMode">
@@ -71,14 +70,30 @@ const currentPage = computed(() => {
   return pages.value[pageIndex.value]
 })
 
+// [추가] 퀴즈 미리 생성 함수
+const prefetchQuiz = async () => {
+  try {
+    console.log("🤖 퀴즈 데이터를 백그라운드에서 생성 중...");
+    // num_questions는 기본값 3개 (필요시 조정)
+    await api.post(`/api/stories/${storyId}/questions/`, { num_questions: 3 });
+    console.log("✅ 퀴즈 생성 완료 (대기열 등록됨)");
+  } catch (error) {
+    // 백그라운드 작업이므로 에러가 나도 사용자에게 알림을 띄우지 않고 콘솔에만 남김
+    console.warn("퀴즈 미리 생성 실패 (사용자가 퀴즈 버튼 누를 때 다시 시도됩니다):", error);
+  }
+}
+
 const loadStory = async () => {
   try {
     const storyRes = await api.get(`/api/stories/${storyId}/`)
     story.value = storyRes.data
 
     const pagesRes = await api.get(`/api/stories/${storyId}/pages/`)
-    // DB의 content_ko, content_en 필드명을 확인하세요.
     pages.value = pagesRes.data.sort((a, b) => a.page_number - b.page_number)
+    
+    // 동화 로딩이 성공하면, 즉시 퀴즈 생성을 요청합니다.
+    prefetchQuiz();
+
   } catch (error) {
     console.error('동화 로딩 실패:', error)
     alert('동화를 불러오지 못했어요 😭')
@@ -88,20 +103,12 @@ const loadStory = async () => {
   }
 }
 
-onMounted(async () => {
-  await loadStory();
-  
-  // [수정] forEach 대신 for...of를 사용하여 순차적으로 처리
-  for (const [index, page] of pages.value.entries()) {
-    if (!page.audio_en) {
-      // 한 페이지 생성이 완료될 때까지 기다린 후 다음 페이지 요청
-      await fetchAudioForPage(page.id, index);
-      
-      // AI 서버의 부하를 줄이기 위해 요청 사이에 0.5초 정도의 대기 시간을 줍니다.
-      await new Promise(resolve => setTimeout(resolve, 500));
-    }
-  }
-});
+// 동화 내용 중 ** ** or * * 사이 하이라이트
+const highlightContent = (text) => {
+  if (!text) return '';
+  // 정규식 설명: (\*\*|\*) -> ** 또는 * 로 시작하고, (.*?) -> 내용을 잡고, \1 -> 시작했던 것과 같은 기호로 끝남
+  return text.replace(/(\*\*|\*)(.*?)\1/g, '<span class="highlight-word">$2</span>');
+}
 
 // 페이지 넘길 때 오디오 끄기
 watch(pageIndex, () => {
@@ -145,8 +152,6 @@ const goQuiz = () => {
 onMounted(async () => {
   await loadStory();
   
-  // [수정] forEach 대신 for...of를 사용하여 순차적으로 처리
-  // 한 페이지가 완료되어야 다음 페이지로 넘어갑니다.
   for (let i = 0; i < pages.value.length; i++) {
     const page = pages.value[i];
     if (!page.audio_en) {
@@ -244,6 +249,18 @@ const fetchAudioForPage = async (pageId, index) => {
   transition: transform 0.2s;
 }
 .btn-primary:hover { transform: translateY(-3px); background-color: #FA5252; }
+
+:deep(.highlight-word) {
+  background-color: #fffcf7;
+  border: 2px solid #dfaa78;
+  border-radius: 8px;
+  padding: 0 6px;
+  margin: 0 2px;
+  font-weight: 800;
+  color: #e97a31;
+  box-shadow: 2px 2px 0px rgba(255, 230, 156, 0.5);
+  display: inline-block;
+}
 
 @media (min-width: 768px) {
   .book-card { flex-direction: row; min-height: 500px; }
