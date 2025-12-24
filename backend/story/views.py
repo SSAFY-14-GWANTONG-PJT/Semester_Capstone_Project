@@ -7,14 +7,17 @@ from django.db import transaction
 import requests
 
 from .models import Story, StoryPage, Question, Choice
+from accounts.models import UserTracker
+from learning.models import StudySet
+
 from .serializers import (
     StoryListSerializer, 
     StoryDetailSerializer, 
-    StoryCreateSerializer, 
     QuestionSerializer,
     StoryPageSerializer,
     ChoiceSerializer
 )
+
 
 # AI 서버 주소(docker-compose 서비스 명 'ai' 사용)
 AI_SERVER_URL = "http://ai:8000"
@@ -40,77 +43,107 @@ def story_list_create(request) :
         serializer = StoryListSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
-    elif request.method == 'POST' : # FastAPI로 요청 보내는 Request, 결과 DB에 저장
+    elif request.method == 'POST' : # FastAPI main.py으로 요청 보내는 Request, 결과 DB에 저장
         
         # Vue로 부터 받은 데이터 정리
         input_data = request.data
-
-    # ai 서버로 보낼 페이로드(FastAPI 내 StoryRequest 따라)
-    ai_payload = {
-            "age": input_data.get('age', 7),           # 기본값 설정
-            "story_level": input_data.get('story_level', 1),
-            "genre": input_data.get('genre', 'General'),
-            "keywords": input_data.get('keywords', []),
-            "vocab_words": input_data.get('vocab_words', []),
-            "study_set_id": input_data.get('study_set_id')
-        }
-    
-    # 변수 미리 초기화 (UnboudLocalError 방지목적)
-    response = None
-
-    try :
         
-        print(f"AI 서버로 동화 생성 요청 전송 : {ai_payload}")
+        # 사용자 조회
+        user = request.user
 
-        # AI 서버로 요청
-        response = requests.post(f"{AI_SERVER_URL}/generate-story", json=ai_payload)
+        try : 
+            tracker = user.trackers
+            current_age = user.age
+            current_level = tracker.level 
+            current_unit = tracker.unit_number
             
-        if response.status_code != 200:
-            return Response({'errors': 'AI Story Generation Failed'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        except Exception :
+            # 값이 없다면 임의의 기본값을 주입
+            current_age = 7
+            current_level = 5
+            current_unit = 1
             
-        story_data = response.json()
             
-        with transaction.atomic():
-            new_story = Story.objects.create(
-                author=request.user,
-                study_set_id=story_data.get('study_set_id'),
-                title=story_data.get('title'),
-                summary=story_data.get('summary'),
-                genre=story_data.get('genre'),
-                keywords=story_data.get('keywords'),
-                story_level=story_data.get('story_level'),
-                status='completed'
+        vocab_words = []
+        target_study_set_id = None
+        
+        # 만약 include_vocab이 true라면 => 단어장 사용해야
+        if input_data.get('include_vocab'):
+            try : 
+                # 단어장 조회 하고
+                study_set = StudySet.objects.filter(level=current_level, unit_number=current_unit).first()
+
+                if study_set : 
+                    target_study_set_id = study_set.id
+                    # 해당 단어장의 단어들 추출
+                    vocab_words = [v.word for v in study_set.vocas.all()]
+                    print(f"사용자 단어 조회 성공 : {vocab_words}")
+            except Exception as e :
+                print(f"단어 조회 실패 : {e}")
+            
+        # ai 서버로 요청 갈 페이로드 구성 
+        ai_payload = {
+            "age" : current_age, # 사용자 나이
+            "story_level" : current_level, # 사용자 레벨
+            "genre" : input_data.get('genre', 'General'),
+            "keywords" : input_data.get('keywords', []), 
+            "vocab_words" : vocab_words, # 조회한 단어 리스트
+            "study_set_id" : target_study_set_id # 조회한 스터디 셋 ID
+            
+        }
+                
+        try :
+            print(f"AI 서버로 동화 생성 요청 전송 : {ai_payload}")
+
+            # AI 서버로 요청
+            response = requests.post(f"{AI_SERVER_URL}/generate-story", json=ai_payload)
+            
+            if response.status_code != 200:
+                return Response({'errors': 'AI Story Generation Failed'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            
+            story_data = response.json()
+            
+            with transaction.atomic():
+                new_story = Story.objects.create(
+                    author=request.user,
+                    study_set_id=story_data.get('study_set_id'),
+                    title=story_data.get('title'),
+                    summary=story_data.get('summary'),
+                    genre=story_data.get('genre'),
+                    keywords=story_data.get('keywords'),
+                    story_level=story_data.get('story_level'),
+                    status='completed'
+                    )
+
+                pages_data = story_data.get('pages', [])
+            
+                for page in pages_data:
+                    StoryPage.objects.create(
+                        story=new_story,
+                        page_number=page.get('page_number'),
+                        content_en=page.get('content_en'), 
+                        content_ko=page.get('content_kr'), # [핵심] AI 응답(content_kr)을 DB(content_ko)에 저장
+                        image_data=page.get('image_data')
+                        # audio는 null로 저장 (Lazy Loading)
+                    )
+
+            return Response(StoryDetailSerializer(new_story).data, status=status.HTTP_201_CREATED)
+        
+        # 만약 AI 서버 연결 실패라면
+        except requests.exceptions.RequestException as e :
+            print(f"AI 서버 연결 오류 : {e}") 
+            return Response(
+                {'errors' : 'Cannot connect to AI Service'},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE
             )
 
-            pages_data = story_data.get('pages', [])
-            
-            for page in pages_data:
-                StoryPage.objects.create(
-                    story=new_story,
-                    page_number=page.get('page_number'),
-                    content_en=page.get('content_en'), 
-                    content_ko=page.get('content_kr'), # [핵심] AI 응답(content_kr)을 DB(content_ko)에 저장
-                    image_data=page.get('image_data')
-                    # audio는 null로 저장 (Lazy Loading)
-                )
-
-        return Response(StoryDetailSerializer(new_story).data, status=status.HTTP_201_CREATED)
-        
-    # 만약 AI 서버 연결 실패라면
-    except requests.exceptions.RequestException as e :
-        print(f"AI 서버 연결 오류 : {e}") 
-        return Response(
-            {'errors' : 'Cannot connect to AI Service'},
-            status=status.HTTP_503_SERVICE_UNAVAILABLE
-        )
-
-    # 기타 오류라면
-    except Exception as e :
-        print(f"서버 내부 오류 : {e}")
-        return Response(
-            {'errors' : 'Error Occured'},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+        # 기타 오류라면
+        except Exception as e :
+            print(f"서버 내부 오류 : {e}")
+            return Response(
+                {'errors' : 'Error Occured'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -164,13 +197,19 @@ def story_question_list_create(request, story_id) :
     # 문제 생성
     elif request.method == 'POST' : 
         
+        # 기존 문제가 있으면 로드하기
+        if Question.objects.filter(story=story).exists():
+            print(f"스토리 {story_id}에 대한 문제가 이미 존재합니다. 기존 데이터를 반환합니다.")
+            questions = Question.objects.filter(story=story)
+            return Response(QuestionSerializer(questions, many=True).data, status=status.HTTP_200_OK)
+        
         # 동화 본문 텍스트 가져오기
         pages = story.pages.all().order_by('page_number')
         if not pages.exists() :
             return Response(
                 {'errors' : '동화 내용이 없습니다. 페이지를 생성해야 합니다.'},
                 status=status.HTTP_400_BAD_REQUEST
-                                        )
+                )
         
         full_story_text = " ".join([page.content_en for page in pages])
 

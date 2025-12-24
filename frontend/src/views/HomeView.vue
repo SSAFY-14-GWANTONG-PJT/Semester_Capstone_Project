@@ -33,7 +33,7 @@
 
     <section id="features" class="features">
         <div class="container">
-            <h2 class="section-title">✨ 왜 스텝업 스토리인가요?</h2>
+            <h2 class="section-title">왜 스텝업 스토리인가요?</h2>
             <div class="card-grid">
                 <div class="card">
                     <div class="card-icon icon-green">

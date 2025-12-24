@@ -34,8 +34,8 @@
       <div class="form-group">
         <label>단어 학습 포함</label>
         <div class="toggle-group">
-          <button :class="['toggle-btn', { active: includeWord === true }]" @click="includeWord = true">❤️ 네, 넣어주세요!</button>
-          <button :class="['toggle-btn', { active: includeWord === false }]" @click="includeWord = false">❌ 아니요, 괜찮아요!</button>
+          <button :class="['toggle-btn', { active: includeVocab === true }]" @click="includeVocab = true">❤️ 네, 넣어주세요!</button>
+          <button :class="['toggle-btn', { active: includeVocab === false }]" @click="includeVocab = false">❌ 아니요, 괜찮아요!</button>
         </div>
       </div>
 
@@ -135,7 +135,7 @@ const isLoading = ref(false)
 const selectedGenre = ref('')
 const customGenre = ref('')
 const userPrompt = ref('')
-const includeWord = ref(true)
+const includeVocab = ref(false)
 const totalScore = ref(0)
 const lastPoints = ref(0)
 
@@ -153,16 +153,26 @@ const selectGenre = (val) => { selectedGenre.value = val; customGenre.value = ''
 const parseKeywords = (text) => text ? text.split(/,| /).map(w => w.trim()).filter(w => w.length > 0) : []
 
 const createStory = async () => {
+
+  // 선택 항목 중 장르를 넣든, 커스텀을 넣든
   const finalGenre = customGenre.value || selectedGenre.value
+  
   if (!finalGenre || !userPrompt.value) return alert('입력창을 채워주세요!')
+  
   isLoading.value = true
+  
   totalScore.value = 0
+  
   try {
+  
     const response = await axios.post(`/api/stories/`, {
-      age: 7, story_level: 2, genre: finalGenre,
+  
+      genre: finalGenre,
       keywords: parseKeywords(userPrompt.value),
-      study_set_id: includeWord.value ? 1 : null,
-      vocab_words: []
+      
+      // 단어 포함 여부만 전달해서, true면 백엔드가 study_set을 조회하도록
+      include_vocab : includeVocab.value
+  
     }, {
       headers: { Authorization: `Bearer ${store.token}` }
     })

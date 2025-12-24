@@ -62,7 +62,7 @@ const logoutHandler = async () => {
 
             <div v-else class="user-profile-section">
               <div class="user-profile-chip">
-                <div class="user-avatar-mini">✨</div>
+                <div class="user-avatar-mini">🐤</div>
                 <div class="user-info-nav">
                   <span class="user-nickname-nav"><strong>{{ nickname }}</strong>님</span>
                 </div>
