@@ -3,7 +3,7 @@
     <section class="profile-banner">
       <div class="container banner-inner">
         <div class="user-main-info">
-          <div class="big-avatar">✨</div>
+          <div class="big-avatar">🐤</div>
           <div class="name-zone">
             <span class="welcome-tag">오늘도 열공 중!</span>
             <h1><strong>{{ nickname }}</strong>님의 학습 공간</h1>
@@ -25,7 +25,7 @@
     <main class="container dashboard-grid">
       <div class="dash-card progress-card">
         <div class="card-header">
-          <h3>🚀 현재 학습 레벨</h3>
+          <h3>현재 학습 레벨</h3>
           <span class="level-badge">LEVEL {{ userInfo.level }}</span>
         </div>
         <div class="progress-container">

@@ -9,11 +9,11 @@
 
     <section class="container hero">
         <div class="hero-text">
-            <h1>AI가 만들어주는<br>우리 아이 맞춤형<br>영어 동화책</h1>
+            <h1>스텝업 스토리<br>우리 아이 맞춤형<br>영어 동화책</h1>
             <p>
                 매번 똑같은 교재는 이제 그만!<br>
-                아이의 흥미와 수준을 분석해 <strong>매일 새로운 동화</strong>와<br>
-                <strong>맞춤형 학습 플래너</strong>를 선물하세요 🎁
+                아이의 흥미와 수준을 분석해 <strong>새로운 동화</strong>와<br>
+                <strong>맞춤형 학습 기능들을 </strong>통해 공부해요 
             </p>
             <div class="hero-buttons">
                 <a href="#features" class="btn btn-secondary">더 알아보기</a>
@@ -33,43 +33,60 @@
 
     <section id="features" class="features">
         <div class="container">
-            <h2 class="section-title">✨ 왜 스텝업 스토리인가요?</h2>
+            <h2 class="section-title">왜 스텝업 스토리인가요?</h2>
             <div class="card-grid">
                 <div class="card">
                     <div class="card-icon icon-green">
                         <i class="fas fa-calendar-check"></i>
                     </div>
-                    <h3>AI 학습 플래너</h3>
-                    <p>아이 수준을 진단해<br>주간·월간 학습 계획을<br>자동으로 짜드려요 📅</p>
+                    <h3>난이도에 맞는 학습</h3>
+                    <p>영어 수준을 진단해<br>매일 매일 추천 어휘를<br>제공받을 수 있어요</p>
                 </div>
                 <div class="card">
                     <div class="card-icon icon-yellow">
                         <i class="fas fa-book-open"></i>
                     </div>
                     <h3>나만의 맞춤 동화</h3>
-                    <p>아이가 좋아하는 주제에<br>학습 목표 어휘를 쏙쏙 넣어<br>동화를 만들어요 🎨</p>
+                    <p>내가 좋아하는 주제에<br>학습 목표 어휘를 쏙쏙 넣어<br>동화를 만들어요</p>
                 </div>
                 <div class="card">
                     <div class="card-icon icon-pink">
                         <i class="fas fa-microphone-alt"></i>
                     </div>
-                    <h3>발음 피드백</h3>
-                    <p>AI 선생님과 함께 읽어요<br>말하면 바로바로<br>발음을 고쳐줍니다 🎤</p>
+                    <h3>영어 동화 리딩</h3>
+                    <p>AI 선생님이 읽어줘요<br>발음을 확인하고<br>뜻을 확인해볼 수 있어요</p>
                 </div>
                 <div class="card">
                     <div class="card-icon icon-blue">
                         <i class="fas fa-magic"></i>
                     </div>
                     <h3>자동 문제 생성</h3>
-                    <p>읽은 동화 내용으로<br>퀴즈와 단어 카드가<br>자동으로 만들어져요 ✨</p>
+                    <p>생성한 동화를 바탕으로<br>퀴즈가 생성되어<br>공부하며 레벨업해요</p>
                 </div>
+
+                <div class="card">
+                    <div class="card-icon icon-orange">
+                        <i class="fa-solid fa-book"></i>
+                    </div>
+                    <h3>스텝업 도서관</h3>
+                    <p>다른 친구들이 만든<br>동화를 함께 보면서<br>영어를 이해하고 공부해요</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon icon-purple">
+                        <i class="fa-solid fa-comment"></i>
+                    </div>
+                    <h3>커뮤니티</h3>
+                    <p>모든 궁금증들을<br>또래 친구들과<br>함께 나눌 수 있어요</p>
+                </div>
+
             </div>
         </div>
     </section>
 
     <section id="cycle" class="cycle-section">
         <div class="container">
-            <h2 class="section-title">🚀 영어 실력이 쑥쑥 크는 과정</h2>
+            <h2 class="section-title">영어 실력이 쑥쑥 크는 과정</h2>
             
             <div class="path-container">
                 <div class="step-row">
@@ -78,8 +95,8 @@
                         <div class="step-number">STEP 1</div>
                     </div>
                     <div class="step-content">
-                        <h4>🔍 진단 & 플래닝</h4>
-                        <p>AI가 아이의 레벨과 관심사를 분석해<br>딱 맞는 목표를 세워요!</p>
+                        <h4>🔍 레벨 진단</h4>
+                        <p>Lv. 1 에서 Lv. 10 까지<br>나에게 맞는 레벨을 진단받아요</p>
                     </div>
                 </div>
 
@@ -112,45 +129,13 @@
                     </div>
                     <div class="step-content">
                         <h4>⭐ 퀴즈 & 피드백</h4>
-                        <p>맞춤 퀴즈를 풀고<br>실력을 확인해요!</p>
+                        <p>맞춤 퀴즈를 풀고<br>실력을 늘리고 경험치를 받아요!</p>
                     </div>
                 </div>
             </div>
         </div>
     </section>
-
-    <section id="team" class="team-section">
-        <div class="container">
-            <h2 class="section-title">함께 만드는 사람들 👨‍👩‍👧</h2>
-            
-            <div class="team-members">
-                <div>
-                    <div class="team-member member-1">👨‍💻</div>
-                    <div class="team-name">김경민</div>
-                </div>
-                <div>
-                    <div class="team-member member-2">👨‍💻</div>
-                    <div class="team-name">민승환</div>
-                </div>
-                <div>
-                    <div class="team-member member-3">👩‍💻</div>
-                    <div class="team-name">정회지</div>
-                </div>
-            </div>
-            
-            <div class="tech-section">
-                <p style="color:#999; font-size: 1.2rem; font-weight: 700; margin-bottom: 10px;">Powered by 🚀</p>
-                <div class="tech-badges">
-                    <span class="badge">🦜 LangChain</span>
-                    <span class="badge">⚡ FastAPI</span>
-                    <span class="badge">🤖 OpenAI</span>
-                    <span class="badge">⚛️ Vue.js</span>
-                    <span class="badge">🗄️ ChromaDB</span>
-                </div>
-            </div>
-        </div>
-    </section>
-
+ 
     <footer>
         <div class="container">
             <p>&copy; 2024 Step-up Story. All rights reserved.</p>
@@ -473,6 +458,9 @@ header {
 .icon-yellow { background: linear-gradient(135deg, #FFC800, #FFE066); color: white; }
 .icon-pink { background: linear-gradient(135deg, #FF6B9D, #FF9DBE); color: white; }
 .icon-blue { background: linear-gradient(135deg, #1CB0F6, #58D3FF); color: white; }
+.icon-orange { background: linear-gradient(135deg, #eb8f27, #e96710); color: white; }
+.icon-purple { background: linear-gradient(135deg, #6818e9, #8f23b9); color: white; }
+
 
 .card h3 {
     margin: 20px 0 15px;
