@@ -16,6 +16,7 @@ import UserTotalStory from '@/views/mypage/UserTotalStory.vue'
 import TodayGrammarView from '@/views/learning/TodayGrammarView.vue'
 import TodayPronunciationView from '@/views/learning/TodayPronunciationView.vue'
 import OnboardingView from '@/views/learning/OnboardingView.vue'
+import StoryCommunity from '@/views/story_community/StoryCommunity.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -120,11 +121,17 @@ const router = createRouter({
       component: TodayPronunciationView
     },
     {
-    path: '/onboarding',
-    name: 'onboarding',
-    component: OnboardingView,
-    meta: { requiresAuth: true } // 로그인 필요
-},
+      path: '/onboarding',
+      name: 'onboarding',
+      component: OnboardingView,
+      meta: { requiresAuth: true } // 로그인 필요
+    },
+    // 동화 공유 게시판
+    {
+      path: '/story/community',
+      name: 'story-community',
+      component: StoryCommunity
+    }
   ],
 })
 

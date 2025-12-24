@@ -20,4 +20,7 @@ urlpatterns = [
 
     # 댓글 좋아요 토글
     path('comments/<int:comment_id>/like/', views.comment_like_toggle),  # POST
+
+    # 동화 커뮤니티 동화 조회
+    path('allstories/',views.getAllStories),
 ]

@@ -65,11 +65,13 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
 
 
 class UserStorySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Story
-        fields = ['id', 'author', 'title', 'created_at']
+    user_nickname = serializers.ReadOnlyField(source='author.nickname')
+    thumbnail = serializers.SerializerMethodField()
 
-class UserStoryAllSeializer(serializers.ModelSerializer):
     class Meta:
         model = Story
-        fields = '__all__'
+        fields = ['id', 'title', 'summary', 'genre', 'thumbnail', 'created_at', 'status', 'user_nickname']
+
+    def get_thumbnail(self, obj):
+        first_page = obj.pages.first() 
+        return first_page.image_data if first_page else None
