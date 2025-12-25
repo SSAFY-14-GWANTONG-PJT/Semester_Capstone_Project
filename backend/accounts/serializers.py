@@ -58,20 +58,47 @@ class SignUpSerializer(serializers.ModelSerializer):
         return user
     
 class ProfileUpdateSerializer(serializers.ModelSerializer):
-    
+    password = serializers.CharField(write_only=True, required=False, allow_blank =True)
     class Meta:
         model = User
-        fields = ['nickname', 'email']
+        fields = ['nickname', 'email', 'password']
+    
+    def update(self, instance, validated_data):
+        # 1. 검증된 데이터에서 비밀번호를 꺼냄
+        password = validated_data.pop('password', None)
+        
+        # 2. 이메일, 닉네임 등 일반 필드 업데이트
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        
+        # 3. 비밀번호가 존재할 때만(수정 요청이 있을 때만) 해싱하여 저장
+        # 프론트에서 빈 문자열을 걸러서 보낸다면 여기서 안전하게 처리됨
+        if password:
+            instance.set_password(password)
+            
+        instance.save()
+        return instance
 
 
 class UserStorySerializer(serializers.ModelSerializer):
     user_nickname = serializers.ReadOnlyField(source='author.nickname')
     thumbnail = serializers.SerializerMethodField()
+    like_count = serializers.SerializerMethodField()
+    is_liked = serializers.SerializerMethodField()
 
     class Meta:
         model = Story
-        fields = ['id', 'title', 'summary', 'genre', 'thumbnail', 'created_at', 'status', 'user_nickname']
+        fields = ['id', 'title', 'like_count' ,'is_liked','summary', 'genre', 'thumbnail', 'created_at', 'status', 'user_nickname']
 
     def get_thumbnail(self, obj):
         first_page = obj.pages.first() 
         return first_page.image_data if first_page else None
+
+    def get_like_count(self, obj):
+        return obj.like_story.count()
+
+    def get_is_liked(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.like_story.filter(user=request.user).exists()
+        return False

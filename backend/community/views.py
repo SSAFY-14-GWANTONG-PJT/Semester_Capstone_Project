@@ -203,7 +203,7 @@ def comment_update_delete(request, comment_id):
 
 # 댓글 좋아요 토글 (수정 중)
 @api_view(['POST']) #POST /comments/{comment_id}/like
-@permission_classes([IsAuthenticatedOrReadOnly])
+@permission_classes([IsAuthenticated])
 def comment_like_toggle(request, comment_id):
     # LikeComment 중복 방지 해야함
     comment = get_object_or_404(Comment, pk=comment_id)
@@ -220,16 +220,13 @@ def comment_like_toggle(request, comment_id):
             like_obj.delete()
             liked = False
 
-        # like count 동기화 (캐시 컬럼)
-        like_count = LikeComment.objects.filter(comment=comment).count()
-        comment.like = like_count
-        comment.save(update_fields=['like'])
+        current_like_count = LikeComment.objects.filter(comment=comment).count()
 
     return Response(
         {
             "comment_id": comment.id,
             "liked": liked,
-            "like_count": like_count,
+            "like_count": current_like_count,
         },
         status=status.HTTP_200_OK
     )

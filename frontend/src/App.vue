@@ -192,6 +192,12 @@ header {
   font-weight: 700;
 }
 
+.nav-link-signup:hover {
+  color: rgb(234, 0, 255);
+  transform: scale(1.1);
+  font-weight: 800;
+}
+
 .nav-btn-login {
   background: white;
   padding: 7px 18px;
@@ -201,6 +207,12 @@ header {
   text-decoration: none;
   box-shadow: 0 2px 6px rgba(0,0,0,0.05);
   color: var(--text);
+}
+
+.nav-btn-login:hover {
+  color: rgb(0, 17, 255);
+  transform: scale(1.1);
+  font-weight: 800;
 }
 
 .user-profile-chip {

@@ -24,20 +24,25 @@
 
     <main class="container dashboard-grid">
       <div class="dash-card progress-card">
-        <div class="card-header">
-          <h3>현재 학습 레벨</h3>
-          <span class="level-badge">LEVEL {{ userInfo.level }}</span>
-        </div>
-        <div class="progress-container">
-          <div class="progress-labels">
-            <span>다음 레벨까지</span>
-            <strong>75%</strong>
+        <div class="dash-card progress-card">
+          <div class="card-header">
+            <h3>현재 학습 레벨</h3>
+            <span class="level-badge">LEVEL {{ store.level }}</span>
           </div>
-          <div class="main-progress-bar">
-            <div class="fill" style="width: 75%;"></div>
+          <div class="progress-container">
+            <div class="progress-labels">
+              <span>다음 레벨까지</span>
+              <strong>{{ Math.floor(store.expPercentage) }}%</strong>
+            </div>
+            <div class="main-progress-bar">
+              <div class="fill" :style="{ width: store.expPercentage + '%' }"></div>
+            </div>
+            
+            <p v-if="store.level < 10" class="progress-tip">
+              다음 레벨까지 <strong>{{ store.currentMaxExp - store.experience }} EXP</strong> 남았어요! 🔥
+            </p>
+            <p v-else class="progress-tip">최고 레벨이에요! 당신은 동화 박사님! 🎓</p>
           </div>
-          <p v-if="userInfo.level < 10" class="progress-tip">5권만 더 읽으면 <strong>LEVEL {{ userInfo.level + 1 }}</strong>가 될 수 있어요! 🔥</p>
-          <p v-else class="progress-tip">최고 레벨이에요! 대단해요!</p>
         </div>
       </div>
 
@@ -55,10 +60,37 @@
       <div class="dash-card menu-card">
         <h3>🛠️ 계정 관리</h3>
         <div class="menu-list">
-          <RouterLink :to="{name: 'profile-edit'}" class="menu-item" :userInfo="userInfo">
+          <div class="menu-item" @click="openPasswordModal">
             <span>👤 프로필 수정</span>
             <i class="fas fa-chevron-right"></i>
-          </RouterLink>
+          </div>
+          <Teleport to="body">
+            <Transition name="bounce">
+              <div v-if="showPasswordModal" class="modal-overlay">
+                <div class="modal-content pwd-modal">
+                  <div class="emoji">🔒</div>
+                  <h2 class="modal-title">잠깐만요! 🐾</h2>
+                  <p class="modal-text">본인 확인을 위해<br>비밀번호를 입력해주세요 ✨</p>
+                  
+                  <div class="input-zone">
+                    <input 
+                      type="password" 
+                      v-model="passwordInput" 
+                      class="cute-input" 
+                      placeholder="비밀번호를 입력해요..." 
+                      @keyup.enter="handleVerifyPassword"
+                    />
+                  </div>
+                  
+                  <div class="modal-buttons">
+                    <button @click="showPasswordModal = false" class="btn-keep">닫기</button>
+                    <button @click="handleVerifyPassword" class="btn-verify">확인 완료! 🎈</button>
+                  </div>
+                </div>
+              </div>
+            </Transition>
+          </Teleport>
+
           <RouterLink :to="{name: 'profile-learning-settings'}" class="menu-item">
             <span>⚙️ 학습 설정</span>
             <i class="fas fa-chevron-right"></i>
@@ -105,6 +137,38 @@ const userInfo = ref({
   age: null,
   level: 0,
 })
+
+// 프로필 수정 넘어가기 전, 비번 체크 -------------------------------
+const showPasswordModal = ref(false)
+const passwordInput = ref('')
+
+const openPasswordModal = () => {
+  showPasswordModal.value = true
+  passwordInput.value = ''
+}
+
+const handleVerifyPassword = async () => {
+  if (!passwordInput.value) {
+    alert('비밀번호를 입력해주세요! 🥺')
+    return
+  }
+
+  try {
+    await axios.post('/api/accounts/verify-password/', {
+      password: passwordInput.value
+    })
+    
+    // 성공 시 모달 닫고 페이지 이동
+    showPasswordModal.value = false
+    router.push({ name: 'profile-edit' })
+    
+  } catch (error) {
+    console.error("비밀번호 불일치:", error)
+    alert("비밀번호가 틀렸어요! 다시 확인해볼까요? 🧐")
+    passwordInput.value = ''
+  }
+}
+// 프로필 수정 넘어가기 전, 비번 체크 -------------------------------
 
 // 회원탈퇴 --------------------------------------------------
 const showModal = ref(false)
@@ -293,6 +357,7 @@ const latestStories = computed(() => {
   height: 100%;
   background: linear-gradient(90deg, var(--primary), var(--primary-light));
   border-radius: 100px;
+  transition: width 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .progress-tip { color: #888; font-size: 0.95rem; }
@@ -370,5 +435,61 @@ const latestStories = computed(() => {
   0% { transform: scale(0); }
   50% { transform: scale(1.1); }
   100% { transform: scale(1); }
+}
+
+/* 비번 확인 */
+.pwd-modal {
+  border: 5px solid #CE82FF !important; /* 보라색 테마 */
+}
+
+.input-zone {
+  margin-bottom: 25px;
+}
+
+.cute-input {
+  width: 100%;
+  padding: 15px;
+  border: 3px solid #f0f0f0;
+  border-radius: 20px;
+  font-size: 1.1rem;
+  text-align: center;
+  outline: none;
+  transition: all 0.3s;
+  background: #fdfdfd;
+}
+
+.cute-input:focus {
+  border-color: #CE82FF;
+  background: white;
+  box-shadow: 0 0 15px rgba(206, 130, 255, 0.1);
+}
+
+.btn-verify {
+  flex: 1.5;
+  padding: 12px;
+  background: #58CC02; /* 초록색 버튼 */
+  color: white;
+  border: none;
+  border-radius: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #46A302;
+  transition: transform 0.1s;
+}
+
+.btn-verify:active {
+  transform: translateY(4px);
+  box-shadow: none;
+}
+
+.btn-cancel {
+  flex: 1;
+  padding: 12px;
+  background: #EEE;
+  color: #888;
+  border: none;
+  border-radius: 15px;
+  font-weight: 800;
+  cursor: pointer;
 }
 </style>

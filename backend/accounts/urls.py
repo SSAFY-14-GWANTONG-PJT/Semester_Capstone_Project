@@ -11,4 +11,5 @@ urlpatterns = [
     path('profile/',views.profile),
     path('profile/edit/', views.profileEdit),
     path('profile/stories/',views.getMyStories),
+    path('verify-password/', views.verify_password),
 ]

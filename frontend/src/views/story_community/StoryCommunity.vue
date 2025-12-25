@@ -18,13 +18,23 @@
                 <h1>동화 도서관 📚</h1>
                 <p>친구들과 자유롭게 동화를 공유해보세요!</p>
             </div>
-            <div class="search-wrapper">
-                <input 
-                    type="text" 
-                    v-model="searchQuery" 
-                    placeholder="제목 검색"
+            <div class="header-controls">
+                <button 
+                  class="like-filter-btn" 
+                  :class="{ active: onlyLiked }"
+                  @click="toggleLikedFilter"
                 >
-                <i class="fas fa-search search-icon"></i>
+                  <i :class="onlyLiked ? 'fas fa-heart' : 'far fa-heart'"></i>
+                  좋아요 모아보기
+                </button>
+                <div class="search-wrapper">
+                    <input 
+                        type="text" 
+                        v-model="searchQuery" 
+                        placeholder="제목 검색"
+                    >
+                    <i class="fas fa-search search-icon"></i>
+                </div>
             </div>
         </div>
 
@@ -60,6 +70,10 @@
                   <div class="author">
                       <div class="author-avatar">U</div>
                       <span>{{ story.user_nickname }}</span> 
+                  </div>
+                  <div class="card-like-info" :class="{ 'is-liked': story.is_liked }">
+                      <i class="fas fa-heart"></i>
+                      <span>{{ story.like_count || 0 }}</span>
                   </div>
                   <div class="date-info">
                     생성 : {{ story.created_at.slice(0, 10) }}
@@ -113,6 +127,7 @@ const allPosts = ref([]) // 템플릿과 맞춤
 const loading = ref(true)
 const searchQuery = ref('')
 const filterStatus = ref('all')
+const onlyLiked = ref(false) // 추가: 좋아요 필터 상태
 const pageSize = 6
 
 // 한글 초성 검색 로직
@@ -127,11 +142,20 @@ const getChosung = (str) => {
   return result;
 };
 
-// 검색 + 필터링
+// 추가: 좋아요 필터 토글 함수
+const toggleLikedFilter = () => {
+    onlyLiked.value = !onlyLiked.value
+}
+
+// 검색 + 필터링 (좋아요 필터 로직 추가)
 const filteredPosts = computed(() => {
   let res = [...allPosts.value];
   if (filterStatus.value !== 'all') {
     res = res.filter(s => s.status === filterStatus.value);
+  }
+  // 추가: 좋아요 필터링
+  if (onlyLiked.value) {
+    res = res.filter(s => s.is_liked);
   }
   if (searchQuery.value.trim()) {
     const query = searchQuery.value.toLowerCase().trim();
@@ -225,6 +249,31 @@ const goToCreate = () => router.push('/story/create')
 .page-title h1 { font-size: 2.5rem; color: var(--text); margin-bottom: 5px; }
 .page-title p { color: #888; font-weight: 600; }
 
+.header-controls { display: flex; align-items: center; gap: 15px; }
+
+/* 추가: 좋아요 필터 버튼 스타일 */
+.like-filter-btn {
+    padding: 10px 20px;
+    border-radius: 20px;
+    border: 2px solid #E5E5E5;
+    background: white;
+    color: #777;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.like-filter-btn.active {
+    border-color: #FF6B9D;
+    color: #FF6B9D;
+    background: #FFF0F5;
+}
+.like-filter-btn:hover {
+    background: #f8f8f8;
+}
+
 .search-wrapper { position: relative; width: 300px; }
 .search-wrapper input {
     width: 100%; padding: 12px 20px 12px 45px;
@@ -276,7 +325,21 @@ const goToCreate = () => router.push('/story/create')
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 
-.card-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eee; padding-top: 15px; }
+.card-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eee; padding-top: 15px; flex-wrap: wrap; gap: 10px; }
+
+/* 추가: 카드 내 좋아요 아이콘 스타일 */
+.card-like-info {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 700;
+    color: #bbb;
+    font-size: 0.9rem;
+}
+.card-like-info.is-liked {
+    color: #FF6B9D;
+}
+
 .date-info { color: #999; font-size: 0.9rem; }
 .status-tag { font-size: 0.85rem; font-weight: 800; }
 .status-tag.open { color: #58CC02; }

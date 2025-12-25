@@ -17,7 +17,7 @@
 
         <div class="avatar-section">
           <div class="avatar-circle">
-            <span class="current-emoji">✨</span>
+            <span class="current-emoji">🐤</span>
             <div class="edit-badge">📸</div>
           </div>
           <p class="email-info">현재 모험가 계정 정보</p>
@@ -31,6 +31,25 @@
                 <input type="email" id="email" v-model="editForm.email" placeholder="이메일을 입력하세요">
                 <i class="fas fa-envelope input-icon"></i>
               </div>
+            </div>
+
+            <div class="form-group full-width">
+              <label for="password">새 비밀번호 (변경할 때만 입력)</label>
+              <div class="input-wrapper">
+                <input type="password" id="password" v-model="editForm.password" placeholder="바꿀 비밀번호를 입력하세요">
+                <i class="fas fa-lock input-icon"></i>
+              </div>
+            </div>
+
+            <div class="form-group full-width">
+              <label for="passwordConfirm">새 비밀번호 확인</label>
+              <div class="input-wrapper">
+                <input type="password" id="passwordConfirm" v-model="editForm.passwordConfirm" placeholder="한 번 더 입력해주세요">
+                <i class="fas fa-check-double input-icon"></i>
+              </div>
+              <p v-if="editForm.password && editForm.password !== editForm.passwordConfirm" class="error-text">
+                ❌ 비밀번호가 서로 달라요!
+              </p>
             </div>
 
             <div class="form-group full-width">
@@ -84,6 +103,8 @@ const store = useCounterStore()
 const editForm = reactive({
   nickname: '',
   email: '',
+  password: '',        
+  passwordConfirm: '', 
   age: null,
   level: 0,
 })
@@ -108,15 +129,29 @@ onMounted(async () => {
 
 // 2. 프로필 수정 요청 (PUT 또는 PATCH)
 const updateProfileHandler = async () => {
-  console.log("수정 요청 데이터:")
+  // 1. 비밀번호 일치 여부 확인
+  if (editForm.password && editForm.password !== editForm.passwordConfirm) {
+    alert("비밀번호 확인이 일치하지 않아요! 🥺")
+    return
+  }
+
   try {
-    await axios.patch('/api/accounts/profile/edit/', editForm)
+    // 2. 서버로 보낼 데이터 준비 (비밀번호가 비어있으면 보내지 않음)
+    const payload = {
+      nickname: editForm.nickname,
+      email: editForm.email,
+    }
+    if (editForm.password) {
+      payload.password = editForm.password
+    }
+
+    await axios.patch('/api/accounts/profile/edit/', payload)
     
-    store.nickname = editForm.nickname // Pinia 상태 업데이트
+    store.nickname = editForm.nickname
     alert("성공적으로 수정되었습니다! ✨")
     router.push({ name: 'mypage' })
   } catch (err) {
-    alert("수정에 실패했습니다.\nemail 또는 nickname이 중복되었을 수 있습니다.")
+    alert("수정에 실패했습니다.\n입력하신 정보를 다시 확인해주세요.")
   }
 }
 </script>
@@ -245,5 +280,13 @@ input:focus, select:focus { border-color: #CE82FF; box-shadow: 0 5px 15px rgba(2
   
   transition: all 0.2s ease;
   cursor: pointer;
+}
+
+.error-text {
+  color: #ff6b6b;
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-top: 5px;
+  margin-left: 10px;
 }
 </style>

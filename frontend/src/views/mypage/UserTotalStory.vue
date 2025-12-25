@@ -56,11 +56,11 @@
         <div class="post-grid">
           <div v-for="story in pagedStories" :key="story.id" class="post-card" @click="goDetail(story.id)">
             <div class="card-header-img" :style="getThumbnail(story.thumbnail)">
-              <span class="genre-badge">{{ getGenreName(story.genre) }}</span>
               <div v-if="!story.thumbnail" class="card-icon">{{ getGenreEmoji(story.genre) }}</div>
             </div>
 
             <div class="card-body">
+              <span class="genre-badge">🎭 Genre : {{ getGenreName(story.genre) }}</span>
               <h3 class="card-title">{{ story.title }}</h3>
               <p class="card-excerpt">{{ story.summary || '아이와 함께 만든 소중한 이야기입니다.' }}</p>
               
@@ -68,8 +68,11 @@
                 <div class="date-info">
                   <i class="far fa-calendar-alt"></i> {{ story.created_at?.slice(0, 10) }}
                 </div>
-                <div class="status-tag" :class="story.status">
-                  {{ story.status?.trim() === 'open' ? '공유 중 🌐' : '나만 보기 🔒' }}
+                <div class="status-row">
+                  <span class="welcome-tag">{{ story.status === 'open' ? '공유 중 🌐' : '나만 보기 🔒' }}</span>
+                  <span class="like-badge">
+                    <i class="fas fa-heart"></i> {{ story.like_count }}
+                  </span>
                 </div>
               </div>
             </div>
@@ -207,7 +210,19 @@ const goToCreate = () => router.push('/story/create')
 .card-title { font-size: 1.2rem; font-weight: 800; margin-bottom: 10px; color: #333; }
 .card-footer { display: flex; justify-content: space-between; padding-top: 15px; border-top: 1px solid #eee; font-size: 0.85rem; color: #999; }
 
-.status-tag.open { color: var(--primary); font-weight: 800; }
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.like-badge {
+  color: #FF6B6B;
+  font-weight: 800;
+  font-size: 0.9rem;
+}
+.like-badge i {
+  margin-right: 3px;
+}
 
 /* 헤더 레이아웃 수정 */
 .board-header {

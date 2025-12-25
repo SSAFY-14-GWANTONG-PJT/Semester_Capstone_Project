@@ -57,6 +57,20 @@ def accountDeactive(request):
 
     return Response({"message": "탈퇴 및 로그아웃이 완료되었습니다."}, status=200)
 
+# 비번 확인
+from django.contrib.auth.hashers import check_password
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def verify_password(request):
+    password = request.data.get('password')
+    user = request.user
+    
+    if check_password(password, user.password):
+        return Response({"message": "확인 완료"}, status=200)
+    else:
+        return Response({"message": "비밀번호가 틀립니다."}, status=400)
+
 # 프로필
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

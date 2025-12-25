@@ -83,7 +83,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/api/index'
+import { useCounterStore } from '@/stores/counter'
 
+const store = useCounterStore()
 const router = useRouter()
 
 // 상태 변수
@@ -201,7 +203,10 @@ const finishTest = async () => {
     })
     
     resultLevel.value = res.data.result_level
-    earnedXp.value = res.data.total_xp
+    store.level = res.data.result_level
+
+    earnedXp.value = Math.floor(res.data.total_xp / 10)
+    store.gainExperience(Math.floor(res.data.total_xp/10))
     finished.value = true
   } catch (error) {
     console.error('결과 전송 실패:', error)

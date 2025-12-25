@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Post, Comment, LikePost
+from .models import Post, Comment, LikePost, LikeComment
 from story.models import Story
 
 class PostSerializer(serializers.ModelSerializer):
@@ -42,15 +42,38 @@ class PostSerializer(serializers.ModelSerializer):
 class CommentSerializer(serializers.ModelSerializer):
     user_email = serializers.ReadOnlyField(source='user.email')
     user_nickname = serializers.ReadOnlyField(source='user.nickname')
+    like_count = serializers.SerializerMethodField()
+    is_liked = serializers.SerializerMethodField()
 
     class Meta:
         model = Comment
         fields = '__all__'
         read_only_fields = ['user', 'post']
 
+    def get_like_count(self, obj):
+        return LikeComment.objects.filter(comment=obj).count()
+
+    def get_is_liked(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return LikeComment.objects.filter(comment=obj, user=request.user).exists()
+        return False
+
+
 class UserStoryAllSerializer(serializers.ModelSerializer):
     user_nickname = serializers.ReadOnlyField(source='author.nickname')
+    like_count = serializers.SerializerMethodField()
+    is_liked = serializers.SerializerMethodField()
 
     class Meta:
         model = Story
         fields = '__all__'
+    
+    def get_like_count(self, obj):
+        return obj.like_story.count()
+
+    def get_is_liked(self, obj):
+        user = self.context.get('request').user
+        if user.is_authenticated:
+            return obj.like_story.filter(user=user).exists()
+        return False
