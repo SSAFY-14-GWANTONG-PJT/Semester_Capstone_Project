@@ -42,6 +42,13 @@
   <div v-else class="loading-container">
     <p>📖 동화책을 펼치는 중이에요...</p>
   </div>
+
+  <div v-if="story && story.author_email !== store.email" class="like-container">
+  <button @click="toggleLike" :class="['like-button', { 'active': story.is_liked }]">
+    <i :class="[story.is_liked ? 'fas' : 'far', 'fa-heart']"></i>
+    <span>좋아요 {{ story.like_count }}</span>
+  </button>
+</div>
 </template>
 
 <script setup>
@@ -53,6 +60,7 @@ import { useCounterStore } from '@/stores/counter'
 
 const route = useRoute()
 const router = useRouter()
+const store = useCounterStore()
 
 const storyId = route.params.id
 const story = ref(null)
@@ -174,6 +182,18 @@ const fetchAudioForPage = async (pageId, index) => {
     console.error(`${index + 1}페이지 오디오 생성 실패:`, err)
   }
 }
+
+// 좋아요 기능
+const toggleLike = async () => {
+  try {
+    const res = await api.post(`/api/stories/${storyId}/like/`)
+    // 서버 응답값으로 실시간 반영
+    story.value.is_liked = res.data.is_liked
+    story.value.like_count = res.data.like_count
+  } catch (err) {
+    console.error('좋아요 실패:', err)
+  }
+}
 </script>
 
 <style scoped>
@@ -278,5 +298,32 @@ const fetchAudioForPage = async (pageId, index) => {
   font-weight: bold;
   color: #555;
   transition: all 0.2s;
+}
+
+.like-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 40px;
+  padding-bottom: 50px;
+}
+.like-button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 25px;
+  border-radius: 50px;
+  border: 2px solid #FF6B6B;
+  background: white;
+  color: #FF6B6B;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.like-button.active {
+  background: #FF6B6B;
+  color: white;
+}
+.like-button:hover {
+  transform: scale(1.05);
 }
 </style>

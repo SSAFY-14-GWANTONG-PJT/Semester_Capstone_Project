@@ -38,5 +38,7 @@ class Choice(models.Model):
     content = models.TextField()
     is_correct = models.BooleanField(default=False)
     
-
-
+class LikeStory(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='like_story')
+    story = models.ForeignKey(Story,on_delete=models.CASCADE,related_name='like_story')
+    liked_at = models.DateTimeField(auto_now_add=True)

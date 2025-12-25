@@ -123,7 +123,11 @@ const checkAnswers = () => {
     alert('아직 안 푼 문제가 있어요! 🧐')
     return
   }
+
+  const score = calculateScore()
   showResult.value = true
+  store.gainExperience(Math.floor(score/4) + 20)
+  alert('동화 생성 경험치 : 30, 문제 풀이 경험치 : 점수 / 4를 획득했어요!')
 }
 
 const calculateScore = () => {

@@ -19,4 +19,7 @@ urlpatterns = [
     
     # 페이지 별 TTS 생성
     path('page/<int:page_id>/tts/', views.generate_page_tts, name='generate-page-tts'),
+
+    # story 좋아요 기능
+    path('<int:story_id>/like/', views.toggle_like),
 ] 

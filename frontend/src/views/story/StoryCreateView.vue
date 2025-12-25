@@ -58,6 +58,10 @@
       <div v-show="isLoading" class="loading-overlay">
         
         <div class="game-header">
+          <div class="game-tip">
+            <span>💡 획득한 점수만큼 경험치가 쌓여요!</span>
+          </div>
+
           <div class="score-board-outer">
             <span class="score-label">MY SCORE</span>
             <span class="score-value">{{ totalScore }}</span>
@@ -163,32 +167,30 @@ const selectGenre = (val) => { selectedGenre.value = val; customGenre.value = ''
 const parseKeywords = (text) => text ? text.split(/,| /).map(w => w.trim()).filter(w => w.length > 0) : []
 
 const createStory = async () => {
-
-  // 선택 항목 중 장르를 넣든, 커스텀을 넣든
   const finalGenre = customGenre.value || selectedGenre.value
-  
   if (!finalGenre || !userPrompt.value) return alert('입력창을 채워주세요!')
-  
+
   isLoading.value = true
-  
-  totalScore.value = 0
-  
+  totalScore.value = 0 // 게임 점수 초기화
+
   try {
-  
     const response = await axios.post(`/api/stories/`, {
-  
       genre: finalGenre,
       keywords: parseKeywords(userPrompt.value),
-      
-      // 단어 포함 여부만 전달해서, true면 백엔드가 study_set을 조회하도록
-      include_vocab : includeVocab.value
-  
-    }, {
-      headers: { Authorization: `Bearer ${store.token}` }
+      include_vocab: includeVocab.value
     })
+
+    // 경험치 부여 로직
+    if (totalScore.value > 0) {
+      store.gainExperience(Math.floor(totalScore.value/10))
+    }
+
+    // 페이지 이동
     router.push({ name: 'story-read', params: { id: response.data.id } })
+    
   } catch (error) {
-    console.error('실패:', error); isLoading.value = false;
+    console.error('실패:', error)
+    isLoading.value = false
   }
 }
 
@@ -527,7 +529,41 @@ input::placeholder, textarea::placeholder {
   display: flex; flex-direction: column; justify-content: center; align-items: center;
 }
 
-.game-header { width: 360px; margin-bottom: 10px; display: flex; justify-content: flex-end; }
+/* 게임 상단 팁 스타일 */
+.game-tip {
+  background: #FFD54F; /* 노란색 */
+  border: 3px solid #F57F17; /* 주황색 테두리 */
+  border-radius: 50px;
+  padding: 8px 20px;
+  margin-right: auto; /* 왼쪽 정렬 */
+  margin-left: 10px;
+  box-shadow: 0 4px 0 #F57F17;
+  animation: float 2s infinite ease-in-out;
+}
+
+.game-tip span {
+  color: #E65100;
+  font-weight: 900;
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+
+/* 둥실둥실 떠 있는 애니메이션 추가 */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+/* 기존 game-header 수정 (팁과 점수판 정렬) */
+.game-header { 
+  width: 360px; 
+  margin-bottom: 15px; 
+  display: flex; 
+  align-items: center; /* 세로 중앙 정렬 */
+  justify-content: space-between;
+  gap: 10px;
+}
+
 .score-board-outer {
   background: #4E342E; color: #FFD54F; padding: 10px 20px; border-radius: 20px 20px 5px 5px;
   text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.2); border: 4px solid #333; border-bottom: none;

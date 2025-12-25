@@ -33,11 +33,11 @@
                 </div>
 
                 <div v-if="loading" class="loading-area">
-                    <i class="fas fa-spinner fa-spin"></i> 이야기를 불러오고 있어요...
+                    <i class="fas fa-spinner fa-spin"></i> 게시글을 불러오고 있어요...
                 </div>
 
                 <div v-else-if="allPosts.length === 0" class="empty-area">
-                    <p>아직 등록된 이야기가 없어요 😢<br>첫 번째 작가가 되어보세요!</p>
+                    <p>아직 등록된 게시글이 없어요 😢<br>첫 번째 게시글의 주인공이 되어보세요!</p>
                 </div>
 
                 <div v-else-if="filteredPosts.length === 0" class="empty-area">

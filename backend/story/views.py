@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404
 from django.db import transaction
 import requests
 
-from .models import Story, StoryPage, Question, Choice
+from .models import Story, StoryPage, Question, Choice, LikeStory
 from accounts.models import UserTracker
 from learning.models import StudySet, Voca, Meaning
 
@@ -40,7 +40,7 @@ def story_list_create(request) :
         if level: queryset = queryset.filter(story_level=level)
         if story_status: queryset = queryset.filter(status=story_status)
             
-        serializer = StoryListSerializer(queryset, many=True)
+        serializer = StoryListSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     elif request.method == 'POST' : # FastAPI main.py으로 요청 보내는 Request, 결과 DB에 저장
@@ -127,7 +127,7 @@ def story_list_create(request) :
                         # audio는 null로 저장 (Lazy Loading)
                     )
 
-            return Response(StoryDetailSerializer(new_story).data, status=status.HTTP_201_CREATED)
+            return Response(StoryDetailSerializer(new_story, context={'request': request}).data, status=status.HTTP_201_CREATED)
         
         # 만약 AI 서버 연결 실패라면
         except requests.exceptions.RequestException as e :
@@ -297,7 +297,7 @@ def story_detail(request, pk):
     story = get_object_or_404(Story, pk=pk)
 
     if request.method == 'GET': 
-        serializer = StoryDetailSerializer(story)
+        serializer = StoryDetailSerializer(story, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     elif request.method == 'PUT':
@@ -307,7 +307,7 @@ def story_detail(request, pk):
         
         # 동화 작성자와 요청자 같다면 수정, 
         # 여기서 status를 변경할 시 DELETE 역할도 할 것이라 DELETE 따로 작성 X
-        serializer = StoryDetailSerializer(story, data=request.data, partial=True)
+        serializer = StoryDetailSerializer(story, data=request.data, partial=True, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -344,3 +344,25 @@ def question_choice_create(request, question_id):
         serializer.save(question=question)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def toggle_like(request, story_id):
+    story = get_object_or_404(Story, id=story_id)
+    user = request.user
+    
+    # 이미 좋아요를 눌렀다면 삭제 (좋아요 취소)
+    like_qs = LikeStory.objects.filter(user=user, story=story)
+    
+    if like_qs.exists():
+        like_qs.delete()
+        is_liked = False
+    else:
+        # 누르지 않았다면 생성 (좋아요 추가)
+        LikeStory.objects.create(user=user, story=story)
+        is_liked = True
+    
+    return Response({
+        'is_liked': is_liked,
+        'like_count': story.like_story.count()
+    })
