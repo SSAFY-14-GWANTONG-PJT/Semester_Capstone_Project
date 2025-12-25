@@ -155,7 +155,7 @@ const signUpForm = reactive({
     password: '',
     passwordConfirm: '',
     age: 0,
-    level: 0,
+    level: 1,
 })
 
 const signUpHandler = async () => {

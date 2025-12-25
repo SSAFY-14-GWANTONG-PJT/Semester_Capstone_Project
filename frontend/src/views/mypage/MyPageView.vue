@@ -202,6 +202,8 @@ onMounted(async () => {
     userInfo.value.nickname = response.data.nickname
     userInfo.value.email = response.data.email
     userInfo.value.age = response.data.age
+    store.level = response.data.level
+    store.experience = response.data.exp
   } catch (error) {
     console.error("프로필 가져오기 실패:", error)
   }

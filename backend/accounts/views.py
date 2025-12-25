@@ -1,6 +1,6 @@
 # JWT 기반의 로그인
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializers import MyTokenObtainPairSerializer, UserStorySerializer, SignUpSerializer, ProfileUpdateSerializer
+from .serializers import MyTokenObtainPairSerializer, UserStorySerializer, SignUpSerializer, ProfileUpdateSerializer, UpdateExpSerializer
 
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
@@ -79,14 +79,17 @@ def profile(request):
     
     try:
         level = user.trackers.level
+        exp = user.trackers.experience_point
     except UserTracker.DoesNotExist:
         level = 1 
+        exp = 0
     
     return Response({
         "level": level,
         "nickname": user.nickname,
         "email": user.email,
         'age': user.age,
+        'exp': exp
     })
 
 @api_view(['PATCH'])
@@ -131,3 +134,23 @@ def getMyStories(request):
     return Response(serializer.data, status=200)
 
 # 모든 스토리 가져오기
+
+
+# 경험치 갱신
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def updateExp(request):
+    tracker, created = UserTracker.objects.get_or_create(user=request.user)
+    
+    # instance에 tracker 객체를 넘겨줍니다.
+    serializer = UpdateExpSerializer(instance=tracker, data=request.data, partial=True)
+    
+    if serializer.is_valid():
+        serializer.save()
+        return Response({
+            "message": "경험치가 성공적으로 업데이트되었습니다.",
+            "level": tracker.level,
+            "experience_point": tracker.experience_point
+        }, status=200)
+    
+    return Response(serializer.errors, status=400)
