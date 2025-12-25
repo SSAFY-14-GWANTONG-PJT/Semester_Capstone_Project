@@ -102,3 +102,31 @@ class UserStorySerializer(serializers.ModelSerializer):
         if request and request.user.is_authenticated:
             return obj.like_story.filter(user=request.user).exists()
         return False
+
+class UpdateExpSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserTracker
+        fields = ['level', 'experience_point']
+
+    def update(self, instance, validated_data):
+        # 1. 전달받은 경험치와 레벨을 가져옵니다.
+        new_exp = validated_data.get('experience_point', instance.experience_point)
+        current_level = validated_data.get('level', instance.level)
+
+        # 2. 백엔드에서 레벨업 로직을 한 번 더 검증합니다.
+        # 공식: max_exp = 100 + (current_level - 1) * 20
+        while True:
+            max_exp = 100 + (current_level - 1) * 20
+            if new_exp >= max_exp:
+                if current_level >= 10: # 만렙 제한
+                    new_exp = max_exp
+                    break
+                new_exp -= max_exp
+                current_level += 1
+            else:
+                break
+        
+        instance.level = current_level
+        instance.experience_point = new_exp
+        instance.save()
+        return instance

@@ -1,5 +1,6 @@
 import { ref, computed, watch } from 'vue'
 import { defineStore } from 'pinia'
+import api from '@/api/index.js'
 
 export const useCounterStore = defineStore('counter', () => {
   // 1. 기존 상태(State) 유지
@@ -59,9 +60,23 @@ export const useCounterStore = defineStore('counter', () => {
   }
 
   // 경험치 획득 함수 (컴포넌트에서 호출용)
-  const gainExperience = (amount) => {
+  const gainExperience = async (amount) => {
+    if (amount <= 0) return
+    
+    // 1. 프론트엔드 상태 업데이트 및 레벨업 체크
     experience.value += amount
     checkLevelUp()
+
+    // 2. 백엔드 DB와 동기화 (추가된 부분)
+    try {
+      await api.patch('/api/accounts/update-exp/', {
+        level: level.value,          
+        experience_point: experience.value 
+      })
+      console.log('경험치 DB 동기화 완료 ✨')
+    } catch (err) {
+      console.error('경험치 DB 업데이트 실패:', err)
+    }
   }
 
   function login(newToken, newRefreshToken, newNickname, newEmail) {
