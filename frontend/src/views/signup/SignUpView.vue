@@ -174,7 +174,7 @@ const signUpHandler = async () => {
         email: signUpForm.email,
         password: signUpForm.password,
         age: signUpForm.age,
-        level: 0,
+        level: 1,
     })
     .then(response => {
         store.login(

@@ -23,13 +23,11 @@ services:
       - ./backend:/app
     depends_on:
       - db
+    env_file:
+      - .env
     environment:
       - DJANGO_DB_HOST=db
-      - DJANGO_DB_NAME=${POSTGRES_DB}
-      - DJANGO_DB_USER=${POSTGRES_USER}
-      - DJANGO_DB_PASSWORD=${POSTGRES_PASSWORD}
-      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
-  
+      
   # 3. AI
   # Macbook Pro M4(ARM64) 기준으로 변경
   ai:

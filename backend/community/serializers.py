@@ -64,6 +64,8 @@ class UserStoryAllSerializer(serializers.ModelSerializer):
     user_nickname = serializers.ReadOnlyField(source='author.nickname')
     like_count = serializers.SerializerMethodField()
     is_liked = serializers.SerializerMethodField()
+    # 썸네일 필드
+    thumbnail = serializers.SerializerMethodField()
 
     class Meta:
         model = Story
@@ -77,3 +79,9 @@ class UserStoryAllSerializer(serializers.ModelSerializer):
         if user.is_authenticated:
             return obj.like_story.filter(user=user).exists()
         return False
+    
+    def get_thumbnail(self, obj):
+        first_page = obj.pages.first()
+        if first_page:
+            return first_page.image_data
+        return None

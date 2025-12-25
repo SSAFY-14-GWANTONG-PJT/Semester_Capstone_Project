@@ -60,7 +60,6 @@
             </div>
 
             <div class="card-body">
-              <span class="genre-badge">🎭 Genre : {{ getGenreName(story.genre) }}</span>
               <h3 class="card-title">{{ story.title }}</h3>
               <p class="card-excerpt">{{ story.summary || '아이와 함께 만든 소중한 이야기입니다.' }}</p>
               

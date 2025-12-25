@@ -83,7 +83,7 @@ class QuestionItem(BaseModel):
     choices: List[ChoiceItem] # 선택지를 담는 List
 
 
-# 동화 생성 프롬프트 업데이트
+# 동화 생성 프롬프트
 story_prompt_template = PromptTemplate.from_template(
     """
     You are a professional children's book writer.
@@ -106,6 +106,7 @@ story_prompt_template = PromptTemplate.from_template(
 
     [Content Instructions]
     - Language: Write the story in **English**, and provide a perfect **Korean translation** for each page.
+    - **CRITICAL REQUIREMENT for 'en' field**: The 'en' text MUST be written in **100% English**. Do NOT include any Korean characters, pronunciations, or translations inside the 'en' field.
     - Target Audience Age: {age} years old (Level {level})
     - Genre: {genre}
     - Story Elements (Keywords): {keywords}
@@ -114,6 +115,8 @@ story_prompt_template = PromptTemplate.from_template(
     - **Target Vocabulary Words**: {vocab_words}
     - Include these vocabulary words naturally in the English text.
     - **IMPORTANT**: When you use a word from the Target Vocabulary list, you MUST wrap it in double asterisks to highlight it (e.g., if the word is 'apple', write '**apple**').
+    - **CRITICAL for Korean Translation**: In the 'kr' field, you MUST also identify the corresponding Korean translation of the target word and wrap it in double asterisks.
+      (Example: If English is '**apple**', the Korean text must contain '**사과**').
     - Try to include as many words from the list as possible, but do not overuse them if it ruins the story flow. Natural storytelling is the priority.
 
     [Inputs]
@@ -135,7 +138,8 @@ problem_prompt_template = PromptTemplate.from_template(
     1. **Vocabulary Questions (5 questions)**
        - If `Target Vocab` is provided, use those words first.
        - If `Target Vocab` is empty, pick 5 difficult words from the story.
-       - **Question Format:** "What is the meaning of '**word**'?" (Highlight the word).
+       - **Question Format:** "What is the meaning of 'word'?"
+       - **CRITICAL**: Do NOT use markdown bold syntax (like **word**) in the question text. Keep it clean (e.g., 'word').
        - **Choices:**
          - Correct Answer: The Korean meaning of the word.
          - Incorrect Answers: Pick random meanings from `Distractor Pool`. If pool is empty, generate unrelated Korean meanings.
@@ -152,13 +156,18 @@ problem_prompt_template = PromptTemplate.from_template(
     [Output Format]
     Return a **JSON List** of objects. Do not include markdown code blocks.
     
+    **CRITICAL INSTRUCTION ON CHOICES**:
+    - **Randomize the order of choices**.
+    - The correct answer **MUST NOT** always be the first option (index 0).
+    - Shuffle the choices so the correct answer appears at a random position for each question.
+    
     Example:
     [
       {{
-        "question": "What is the meaning of '**brave**'?",
+        "question": "What is the meaning of 'brave'?",
         "choices": [
-          {{"content": "용감한", "is_correct": true}},
           {{"content": "배고픈", "is_correct": false}},
+          {{"content": "용감한", "is_correct": true}},
           {{"content": "졸린", "is_correct": false}},
           {{"content": "사과", "is_correct": false}},
           {{"content": "책상", "is_correct": false}}
@@ -167,8 +176,8 @@ problem_prompt_template = PromptTemplate.from_template(
       {{
         "question": "Who is the main character?",
         "choices": [
-          {{"content": "A Rabbit", "is_correct": true}},
           {{"content": "A Lion", "is_correct": false}},
+          {{"content": "A Rabbit", "is_correct": true}},
           {{"content": "A Car", "is_correct": false}},
           {{"content": "A Tree", "is_correct": false}},
           {{"content": "A Bear", "is_correct": false}}
@@ -177,7 +186,6 @@ problem_prompt_template = PromptTemplate.from_template(
     ]
     """
 )
-
 # [동기 함수] 실제 SDK를 호출하여 이미지를 만드는 부분
 def _generate_image_sync(prompt: str):
     try:
